@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './node_modules/novel/**/*.{js,ts,jsx,tsx}',
     './src/**/*.{js,ts,jsx,tsx,mdx}'
   ],
   darkMode: 'class',
@@ -29,10 +28,13 @@ module.exports = {
           foreground: "var(--accent-foreground)",
         },
       },
-      novel: {
-        prose: 'prose dark:prose-invert max-w-none',
-        border: 'border-gray-200 dark:border-gray-700'
-      }
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+          },
+        },
+      },
     },
   },
   plugins: [
