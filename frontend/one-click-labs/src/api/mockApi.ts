@@ -29,6 +29,8 @@ export async function mockCreateLab(request: CreateLabRequest): Promise<CreateLa
       title: request.title,
       description: request.description || '',
       author: { id: 'user-1', name: 'Test User' },
+      status: 'draft',
+      userId: 'user-1',
       sections: [
         createSection({
           title: 'Introduction',

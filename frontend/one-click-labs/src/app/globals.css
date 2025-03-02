@@ -48,3 +48,148 @@ body {
     @apply prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert;
   }
 }
+
+/* Responsive video container styles */
+.video-responsive {
+  /* These styles help ensure videos stay within their containers */
+  & iframe,
+  & video {
+    max-width: 100%;
+  }
+  
+  & .video-container,
+  & .video-embed-container {
+    display: block;
+    max-width: 100%;
+    margin: 1rem auto;
+    clear: both;
+    overflow: visible;
+  }
+
+  /* Make videos more compact vertically */
+  & .video-container iframe {
+    aspect-ratio: 16/9;
+    width: 100%;
+    height: auto;
+    max-height: 360px;
+  }
+}
+
+/* Responsive video container for embedded videos */
+.video-responsive {
+  position: relative;
+  width: 100%;
+}
+
+.video-responsive iframe {
+  max-width: 100%;
+}
+
+.aspect-w-16 {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+}
+
+.aspect-w-16 > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Quiz styling */
+.quiz-module .selected-option {
+  border-color: var(--primary-color);
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Ensure text editor content is well-formatted */
+[contenteditable] {
+  line-height: 1.5;
+  
+  & p {
+    margin: 1em 0;
+  }
+  
+  & h1, & h2, & h3, & h4, & h5, & h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+    line-height: 1.2;
+  }
+  
+  & ul, & ol {
+    padding-left: 2em;
+    margin: 1em 0;
+  }
+  
+  & li {
+    margin-bottom: 0.5em;
+  }
+  
+  /* Keep videos and images from disrupting layout */
+  & .video-embed-container {
+    margin: 1.5em 0;
+    clear: both;
+  }
+  
+  & img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em auto;
+  }
+}
+
+/* Ensure embeds don't break the layout */
+iframe {
+  max-width: 100%;
+  border: none;
+}
+
+/* Video responsive containers for embedded content */
+.video-responsive {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  height: 0;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+.video-responsive iframe,
+.video-responsive object,
+.video-responsive embed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Quiz styling for module renderer */
+.quiz-module .quiz-option {
+  transition: all 0.15s ease-in-out;
+}
+
+.quiz-module .quiz-option:hover {
+  border-color: var(--primary);
+}
+
+.quiz-module .option-selected {
+  border-color: var(--primary);
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+/* Aspect ratio utilities */
+.aspect-w-16 {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+}
+
+.aspect-w-16 > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}

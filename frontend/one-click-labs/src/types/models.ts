@@ -95,9 +95,9 @@ export interface VideoModule extends BaseModule {
 export interface QuizQuestion {
   id: ID;
   text: string;
-  type: 'multiple-choice' | 'true-false' | 'short-answer';
+  type: 'multiple-choice' | 'multiple-answer' | 'true-false' | 'short-answer';
   options?: QuizOption[];
-  correctAnswerId?: ID;
+  correctAnswerIds?: ID[]; // Changed from correctAnswerId to support multiple answers
   correctAnswer?: string;
   points: number;
   explanation?: string;
@@ -106,6 +106,7 @@ export interface QuizQuestion {
 export interface QuizOption {
   id: ID;
   text: string;
+  isCorrect?: boolean; // Added for easier handling in the editor
 }
 
 // Quiz Module
@@ -279,5 +280,25 @@ export const createQuizModule = (partialModule: Partial<QuizModule>): QuizModule
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...partialModule,
+  };
+};
+
+export const createQuizQuestion = (partialQuestion: Partial<QuizQuestion> = {}): QuizQuestion => {
+  return {
+    id: crypto.randomUUID(),
+    text: '',
+    type: 'multiple-answer',
+    options: [],
+    points: 1,
+    ...partialQuestion,
+  };
+};
+
+export const createQuizOption = (partialOption: Partial<QuizOption> = {}): QuizOption => {
+  return {
+    id: crypto.randomUUID(),
+    text: '',
+    isCorrect: false,
+    ...partialOption,
   };
 };
