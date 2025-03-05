@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { mockCreateLab } from "@/api/mockApi";
+import { createLab } from "@/api/apiClient";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CreateLabPage() {
   const router = useRouter();
+  const { token } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState({ title: "", description: "" });
@@ -42,12 +44,18 @@ export default function CreateLabPage() {
 
     // Validate the form
     if (!validateForm()) return;
+    
+    // Check if token exists
+    if (!token) {
+      setApiError("You must be logged in to create a lab");
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
       // Call the API to create a new lab
-      const response = await mockCreateLab({
+      const response = await createLab(token, {
         title,
         description,
       });

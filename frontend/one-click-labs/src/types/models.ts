@@ -302,3 +302,10 @@ export const createQuizOption = (partialOption: Partial<QuizOption> = {}): QuizO
     ...partialOption,
   };
 };
+
+// User types
+export interface User extends BaseEntity {
+  name: string;
+  email: string;
+  role: string;
+}

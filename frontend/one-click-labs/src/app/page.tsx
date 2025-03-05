@@ -1,21 +1,17 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { Lab } from '@/types/models';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { formatDistanceToNow as formatDateDistance } from '@/utils/date';
+import { useAuth } from '@/context/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { getLabs, deleteLab } from '@/api/apiClient';
+import { LabListItem } from '@/types/api';
 
-// Sample user data
-const user = {
-  name: "Jane Cooper",
-  email: "jane@example.com",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jane",
-  role: "Instructor"
-};
-
-// Sample labs data
+// Sample labs data (fallback in case API fails)
 const sampleLabs: Lab[] = [
   {
     id: "1",
@@ -64,38 +60,131 @@ const sampleLabs: Lab[] = [
   }
 ];
 
-export default function Dashboard() {
-  const { theme } = useTheme();
-  const [labs, setLabs] = useState<Lab[]>(sampleLabs);
-  const [labToDelete, setLabToDelete] = useState<Lab | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+export default function HomePage() {
+  return (
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  );
+}
 
-  // Handle delete confirmation
-  const handleDeleteConfirm = () => {
-    if (labToDelete) {
-      setLabs(labs.filter(lab => lab.id !== labToDelete.id));
-      setLabToDelete(null);
+function Dashboard() {
+  const { theme, toggleTheme } = useTheme();
+  const { user, isAuthenticated, token } = useAuth();
+  const [labs, setLabs] = useState<LabListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [labToDelete, setLabToDelete] = useState<LabListItem | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [feedback, setFeedback] = useState({ show: false, message: "", type: "" });
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Fetch labs from API
+  useEffect(() => {
+    const fetchLabsData = async () => {
+      if (isAuthenticated && token) {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const response = await getLabs(token, currentPage, pageSize);
+          if (response.success && response.data && response.data.labs) {
+            setLabs(response.data.labs);
+            
+            // Update pagination information
+            if (response.data.pagination) {
+              setTotalPages(response.data.pagination.pages);
+              setTotalItems(response.data.pagination.total);
+            }
+          } else {
+            setError(response.error || 'Failed to fetch labs');
+            // Keep any sample data if already loaded, otherwise set empty array
+            if (labs.length === 0) {
+              setLabs([]);
+            }
+          }
+        } catch (err) {
+          setError('Error fetching labs. Please try again.');
+          // Keep existing data if any, otherwise set empty array
+          if (labs.length === 0) {
+            setLabs([]);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchLabsData();
+  }, [isAuthenticated, token, currentPage, pageSize, labs.length]);
+
+  // Handle deletion of a lab 
+  const handleDeleteConfirm = async () => {
+    if (!labToDelete) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      // Check if token exists
+      if (!token) {
+        setError("You must be logged in to delete a lab");
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        return;
+      }
+      
+      const response = await deleteLab(token, labToDelete.id);
+      
+      if (response.success) {
+        // Remove from local state
+        setLabs(currentLabs => currentLabs.filter(lab => lab.id !== labToDelete.id));
+        setShowDeleteModal(false);
+        
+        // Show success message
+        setFeedback({
+          show: true,
+          message: "Lab deleted successfully",
+          type: "success"
+        });
+        
+        // Hide feedback after 3 seconds
+        setTimeout(() => {
+          setFeedback(prev => ({ ...prev, show: false }));
+        }, 3000);
+      } else {
+        setError(response.error || "Failed to delete lab");
+      }
+    } catch (err) {
+      console.error("Error deleting lab:", err);
+      setError("An unexpected error occurred while deleting the lab");
+    } finally {
+      setIsDeleting(false);
     }
-    setShowDeleteModal(false);
   };
 
   // Open delete confirmation modal
-  const openDeleteModal = (lab: Lab) => {
+  const openDeleteModal = (lab: LabListItem) => {
     setLabToDelete(lab);
     setShowDeleteModal(true);
   };
 
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'archived':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-400';
-      default:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+  // Get status text and color
+  const getLabStatus = (lab: LabListItem): { text: string; color: string } => {
+    if (lab.isPublished) {
+      return { 
+        text: 'published', 
+        color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+      };
+    } else {
+      return { 
+        text: 'draft', 
+        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+      };
     }
   };
 
@@ -108,11 +197,25 @@ export default function Dashboard() {
             {/* User profile */}
             <div className="flex items-center space-x-3">
               <div className="h-10 w-10 rounded-full overflow-hidden bg-secondary">
-                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                {isAuthenticated && user ? (
+                  <img 
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} 
+                    alt={user.name} 
+                    className="h-full w-full object-cover" 
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-secondary-foreground">
+                    <UserIcon className="h-6 w-6" />
+                  </div>
+                )}
               </div>
               <div>
-                <h3 className="font-medium text-foreground">{user.name}</h3>
-                <p className="text-xs text-secondary-foreground">{user.role}</p>
+                <h3 className="font-medium text-foreground">
+                  {isAuthenticated && user ? user.name : 'Guest'}
+                </h3>
+                <p className="text-xs text-secondary-foreground">
+                  {isAuthenticated && user ? user.role || 'User' : 'Not logged in'}
+                </p>
               </div>
             </div>
           </div>
@@ -122,8 +225,17 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-primary">One Click Labs</h1>
           </div>
           
-          {/* Navigation items (placeholder) */}
+          {/* Navigation items */}
           <div className="flex items-center space-x-2">
+            {/* Theme toggle button */}
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 text-secondary-foreground hover:text-foreground transition-colors"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+            
             <button className="p-2 text-secondary-foreground hover:text-foreground transition-colors">
               <BellIcon />
             </button>
@@ -137,37 +249,44 @@ export default function Dashboard() {
       {/* Main content */}
       <main className="container mx-auto px-4 py-8">
         {/* Dashboard header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Labs</h1>
             <p className="text-secondary-foreground mt-1">Manage your interactive lab experiments</p>
           </div>
-          
-          {/* Create new lab button - ENHANCED */}
-          <Link 
-            href="/create-lab" 
-            className="bg-primary text-primary-foreground px-6 py-3 text-lg font-medium rounded-md hover:opacity-95 hover:shadow-lg hover:translate-y-[-1px] shadow-md transition-all duration-200 inline-flex items-center justify-center border-2 border-primary/20"
-          >
-            <PlusIcon className="mr-2 h-5 w-5" />
-            Create New Lab
-          </Link>
+          <div className="flex items-center space-x-4">
+            <Link
+              href="/create-lab"
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors flex items-center"
+            >
+              <PlusIcon className="mr-1 h-5 w-5" />
+              Create Lab
+            </Link>
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
         {/* Stats section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <StatCard 
             title="Published Labs" 
-            value={labs.filter(lab => lab.status === "published").length} 
+            value={isLoading ? 0 : labs.filter(lab => lab.isPublished).length} 
             icon={<CheckCircleIcon className="text-green-500" />} 
           />
           <StatCard 
             title="Draft Labs" 
-            value={labs.filter(lab => lab.status === "draft").length} 
+            value={isLoading ? 0 : labs.filter(lab => !lab.isPublished).length} 
             icon={<EditIcon className="text-yellow-500" />} 
           />
           <StatCard 
             title="Total Labs" 
-            value={labs.length} 
+            value={isLoading ? 0 : labs.length} 
             icon={<LabIcon className="text-primary" />} 
           />
         </div>
@@ -197,14 +316,30 @@ export default function Dashboard() {
         </div>
 
         {/* Labs grid */}
-        {labs.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12 bg-card border border-dashed border-border-color rounded-lg">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary mb-4">
+              <LabIcon className="h-8 w-8 text-secondary-foreground" />
+            </div>
+            <h2 className="text-xl font-medium text-foreground mb-2">Loading labs...</h2>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12 bg-card border border-dashed border-border-color rounded-lg">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary mb-4">
+              <LabIcon className="h-8 w-8 text-secondary-foreground" />
+            </div>
+            <h2 className="text-xl font-medium text-foreground mb-2">Error loading labs</h2>
+            <p className="text-secondary-foreground mb-6">{error}</p>
+          </div>
+        ) : labs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {labs.map(lab => (
               <LabCard 
                 key={lab.id} 
                 lab={lab} 
                 onDelete={() => openDeleteModal(lab)} 
-                statusColor={getStatusColor(lab.status)}
+                statusColor={getLabStatus(lab).color}
+                statusText={getLabStatus(lab).text.charAt(0).toUpperCase() + getLabStatus(lab).text.slice(1)}
               />
             ))}
           </div>
@@ -226,6 +361,53 @@ export default function Dashboard() {
             </Link>
           </div>
         )}
+        
+        {/* Pagination controls */}
+        {!isLoading && labs.length > 0 && (
+          <div className="flex justify-between items-center mt-8 pb-6">
+            <div className="text-sm text-secondary-foreground">
+              Showing {Math.min(pageSize, labs.length)} of {totalItems} labs
+            </div>
+            <div className="flex space-x-2">
+              <select 
+                className="bg-background border border-input rounded-md px-2 py-1 text-sm"
+                value={pageSize}
+                onChange={(e) => {
+                  const newSize = Number(e.target.value);
+                  setPageSize(newSize);
+                  setCurrentPage(1); // Reset to first page when changing page size
+                }}
+              >
+                <option value={5}>5 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+              
+              <button 
+                className="px-3 py-1 rounded-md border border-input bg-background disabled:opacity-50"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                aria-label="Previous page"
+              >
+                &larr;
+              </button>
+              
+              <span className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md">
+                {currentPage} of {totalPages || 1}
+              </span>
+              
+              <button 
+                className="px-3 py-1 rounded-md border border-input bg-background disabled:opacity-50"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                aria-label="Next page"
+              >
+                &rarr;
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Delete confirmation modal */}
@@ -245,12 +427,13 @@ export default function Dashboard() {
 
 // Lab Card Component
 interface LabCardProps {
-  lab: Lab;
+  lab: LabListItem;
   onDelete: () => void;
   statusColor: string;
+  statusText?: string;
 }
 
-function LabCard({ lab, onDelete, statusColor }: LabCardProps) {
+function LabCard({ lab, onDelete, statusColor, statusText }: LabCardProps) {
   // Truncate description
   const truncateDescription = (text: string, maxLength: number = 100) => {
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
@@ -262,7 +445,7 @@ function LabCard({ lab, onDelete, statusColor }: LabCardProps) {
         <div className="flex justify-between items-start">
           <h3 className="font-semibold text-lg text-foreground mb-2">{lab.title}</h3>
           <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>
-            {lab.status.charAt(0).toUpperCase() + lab.status.slice(1)}
+            {statusText || (lab.isPublished ? 'Published' : 'Draft')}
           </span>
         </div>
         
@@ -312,12 +495,9 @@ function StatCard({ title, value, icon }: StatCardProps) {
   );
 }
 
-// Note: We're now using the imported formatDateDistance function instead of this one
-// The implementation is in src/utils/date.ts
-
 // Icons
 function PlusIcon({ className = "" }: { className?: string }) {
-  return <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>;
+  return <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14M12 5v14M5 12h14"/></svg>;
 }
 
 function EditIcon({ className = "" }: { className?: string }) {
@@ -325,7 +505,7 @@ function EditIcon({ className = "" }: { className?: string }) {
 }
 
 function TrashIcon({ className = "" }: { className?: string }) {
-  return <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+  return <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 2h7"/><path d="M7 16h10"/></svg>;
 }
 
 function CheckCircleIcon({ className = "" }: { className?: string }) {
@@ -350,4 +530,16 @@ function FilterIcon({ className = "" }: { className?: string }) {
 
 function LabIcon({ className = "" }: { className?: string }) {
   return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2v8L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45L14 10V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>;
+}
+
+function SunIcon({ className = "" }: { className?: string }) {
+  return <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+}
+
+function MoonIcon({ className = "" }: { className?: string }) {
+  return <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+}
+
+function UserIcon({ className = "" }: { className?: string }) {
+  return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
 }

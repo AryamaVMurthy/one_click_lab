@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Fragment } from "react";
 import { Lab, Section, Module, isTextModule, isQuizModule, QuizQuestion } from "@/types/models";
 import ModuleRenderer from "@/components/ModuleRenderer";
 
@@ -121,7 +121,7 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar with sections */}
-        <div className="w-72 flex-shrink-0 bg-card border-r border-border-color flex flex-col h-full">
+        <div className="w-64 flex-shrink-0 bg-card border-r border-border-color flex flex-col h-full">
           <div className="p-4 border-b border-border-color">
             <h2 className="font-bold text-foreground">Lab Content</h2>
             <p className="text-sm text-secondary-foreground mt-1">
@@ -163,9 +163,9 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
                       
                       // Determine icon based on module type and completion status
                       const getModuleIcon = () => {
-                        if (isCompleted) return <CheckCircleIcon className="text-green-500 dark:text-green-400" />;
-                        if (isQuizModule(module)) return <QuizIcon />;
-                        return <DocumentTextIcon />;
+                        if (isCompleted) return <CheckCircleIcon key="completed-icon" className="text-green-500 dark:text-green-400" />;
+                        if (isQuizModule(module)) return <QuizIcon key="quiz-icon" />;
+                        return <DocumentTextIcon key="document-icon" />;
                       };
                       
                       return (
@@ -199,7 +199,7 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
         
         {/* Main content area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="container mx-auto px-4 md:px-8 py-8 max-w-4xl">
+          <div className="container mx-auto px-4 md:px-6 py-8 max-w-6xl lg:max-w-7xl">
             {/* Module content */}
             {currentModule ? (
               <div className="flex flex-col">
@@ -217,7 +217,7 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
                 </div>
                 
                 {/* Module renderer */}
-                <div className="bg-card border border-border-color rounded-xl p-6 shadow-sm">
+                <div className="bg-card border border-border-color rounded-xl p-4 md:p-6 lg:p-8 shadow-sm">
                   <ModuleRenderer
                     module={currentModule}
                     onComplete={() => {
@@ -246,15 +246,15 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center"
                   >
                     {isLastModule() ? (
-                      <>
+                      <React.Fragment key="finish-button">
                         Finish Lab
                         <CheckIcon className="ml-2" />
-                      </>
+                      </React.Fragment>
                     ) : (
-                      <>
+                      <React.Fragment key="next-button">
                         Next
                         <ChevronRightIcon className="ml-2" />
-                      </>
+                      </React.Fragment>
                     )}
                   </button>
                 </div>

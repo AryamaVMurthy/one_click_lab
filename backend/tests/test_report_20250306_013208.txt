@@ -1,0 +1,2347 @@
+================================================================================
+One Click Labs API Test Report - 2025-03-06 01:33:00
+================================================================================
+
+Summary:
+Total tests: 57
+Passed: 0
+Failed: 0
+Errors: 57
+Skipped: 0
+Time elapsed: 51.84 seconds
+
+Detailed Results:
+
+Module: test_auth.py
+Passed: 0, Failed: 0, Errors: 22, Skipped: 0
+
+Output:
+============================= test session starts =============================
+collecting ... collected 7 items
+
+tests/test_auth.py::test_register_user ERROR                             [ 14%]
+tests/test_auth.py::test_register_duplicate_user ERROR                   [ 28%]
+tests/test_auth.py::test_login_user ERROR                                [ 42%]
+tests/test_auth.py::test_login_invalid_credentials ERROR                 [ 57%]
+tests/test_auth.py::test_refresh_token ERROR                             [ 71%]
+tests/test_auth.py::test_refresh_token_invalid ERROR                     [ 85%]
+tests/test_auth.py::test_logout ERROR                                    [100%]
+
+=================================== ERRORS ====================================
+____________________ ERROR at setup of test_register_user _____________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x2675712f010>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+---------------------------- Captured stdout setup ----------------------------
+MongoDB connection successful
+---------------------------- Captured stderr setup ----------------------------
+INFO:main:Starting up application...
+INFO:database:MongoDB indexes created successfully (sync)
+----------------------------- Captured log setup ------------------------------
+INFO     main:main.py:58 Starting up application...
+INFO     database:database.py:73 MongoDB indexes created successfully (sync)
+_______________ ERROR at setup of test_register_duplicate_user ________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x2675712eb00>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+______________________ ERROR at setup of test_login_user ______________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x267575278e0>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+______________ ERROR at setup of test_login_invalid_credentials _______________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x267573a9810>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+____________________ ERROR at setup of test_refresh_token _____________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x2675747a320>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+________________ ERROR at setup of test_refresh_token_invalid _________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x2675736e890>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+________________________ ERROR at setup of test_logout ________________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x2675747efe0>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+=========================== short test summary info ===========================
+ERROR tests/test_auth.py::test_register_user - TypeError: name must be an ins...
+ERROR tests/test_auth.py::test_register_duplicate_user - TypeError: name must...
+ERROR tests/test_auth.py::test_login_user - TypeError: name must be an instan...
+ERROR tests/test_auth.py::test_login_invalid_credentials - TypeError: name mu...
+ERROR tests/test_auth.py::test_refresh_token - TypeError: name must be an ins...
+ERROR tests/test_auth.py::test_refresh_token_invalid - TypeError: name must b...
+ERROR tests/test_auth.py::test_logout - TypeError: name must be an instance o...
+======================== 4 warnings, 7 errors in 9.99s ========================
+
+--------------------------------------------------------------------------------
+
+Module: test_labs.py
+Passed: 0, Failed: 0, Errors: 25, Skipped: 0
+
+Output:
+============================= test session starts =============================
+collecting ... collected 8 items
+
+tests/test_labs.py::test_create_lab ERROR                                [ 12%]
+tests/test_labs.py::test_get_lab_by_id ERROR                             [ 25%]
+tests/test_labs.py::test_get_all_labs ERROR                              [ 37%]
+tests/test_labs.py::test_update_lab ERROR                                [ 50%]
+tests/test_labs.py::test_add_section ERROR                               [ 62%]
+tests/test_labs.py::test_update_lab_content ERROR                        [ 75%]
+tests/test_labs.py::test_deploy_lab ERROR                                [ 87%]
+tests/test_labs.py::test_delete_lab ERROR                                [100%]
+
+=================================== ERRORS ====================================
+______________________ ERROR at setup of test_create_lab ______________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x23358f27040>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+---------------------------- Captured stdout setup ----------------------------
+MongoDB connection successful
+---------------------------- Captured stderr setup ----------------------------
+INFO:main:Starting up application...
+INFO:database:MongoDB indexes created successfully (sync)
+----------------------------- Captured log setup ------------------------------
+INFO     main:main.py:58 Starting up application...
+INFO     database:database.py:73 MongoDB indexes created successfully (sync)
+____________________ ERROR at setup of test_get_lab_by_id _____________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x23358f78c10>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+_____________________ ERROR at setup of test_get_all_labs _____________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x23358f0c730>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+______________________ ERROR at setup of test_update_lab ______________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x2335905a410>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+_____________________ ERROR at setup of test_add_section ______________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x23358f12830>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+__________________ ERROR at setup of test_update_lab_content __________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x23358ef65c0>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+______________________ ERROR at setup of test_deploy_lab ______________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x23358f10d00>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+______________________ ERROR at setup of test_delete_lab ______________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x23358ef7580>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+=========================== short test summary info ===========================
+ERROR tests/test_labs.py::test_create_lab - TypeError: name must be an instan...
+ERROR tests/test_labs.py::test_get_lab_by_id - TypeError: name must be an ins...
+ERROR tests/test_labs.py::test_get_all_labs - TypeError: name must be an inst...
+ERROR tests/test_labs.py::test_update_lab - TypeError: name must be an instan...
+ERROR tests/test_labs.py::test_add_section - TypeError: name must be an insta...
+ERROR tests/test_labs.py::test_update_lab_content - TypeError: name must be a...
+ERROR tests/test_labs.py::test_deploy_lab - TypeError: name must be an instan...
+ERROR tests/test_labs.py::test_delete_lab - TypeError: name must be an instan...
+======================= 4 warnings, 8 errors in 10.13s ========================
+
+--------------------------------------------------------------------------------
+
+Module: test_ai.py
+Passed: 0, Failed: 0, Errors: 10, Skipped: 0
+
+Output:
+============================= test session starts =============================
+collecting ... collected 3 items
+
+tests/test_ai.py::test_generate_text ERROR                               [ 33%]
+tests/test_ai.py::test_generate_quiz ERROR                               [ 66%]
+tests/test_ai.py::test_autocomplete ERROR                                [100%]
+
+=================================== ERRORS ====================================
+____________________ ERROR at setup of test_generate_text _____________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x1ca7d731300>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+---------------------------- Captured stdout setup ----------------------------
+MongoDB connection successful
+---------------------------- Captured stderr setup ----------------------------
+INFO:main:Starting up application...
+INFO:database:MongoDB indexes created successfully (sync)
+----------------------------- Captured log setup ------------------------------
+INFO     main:main.py:58 Starting up application...
+INFO     database:database.py:73 MongoDB indexes created successfully (sync)
+____________________ ERROR at setup of test_generate_quiz _____________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x1ca7d8b3760>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+_____________________ ERROR at setup of test_autocomplete _____________________
+
+test_db = AsyncIOMotorDatabase(Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02....rselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab'))
+
+    @pytest.fixture(scope="function")
+    def clean_db(test_db):
+        """Clean the test database before each test."""
+        collections = test_db.list_collection_names()
+        for collection in collections:
+>           test_db[collection].delete_many({})
+
+tests\conftest.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\miniconda3\lib\site-packages\motor\core.py:826: in __getitem__
+    return collection_class(self, name)
+..\..\..\miniconda3\lib\site-packages\motor\core.py:927: in __init__
+    else Collection(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <[RecursionError('maximum recursion depth exceeded while calling a Python object') raised in repr()] Collection object at 0x1ca7d600f40>
+database = Database(MongoClient(host=['cluster0-shard-00-01.nhgph.mongodb.net:27017', 'cluster0-shard-00-02.nhgph.mongodb.net:270...erselectiontimeoutms=5000, driver=DriverInfo(name='Motor', version='3.3.1', platform='asyncio')), 'test_one_click_lab')
+name = <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\Aryama V Murthy\miniconda3\lib\asyncio\futures.py:385]>
+create = False, codec_options = None, read_preference = None
+write_concern = None, read_concern = None, session = None, kwargs = {}
+
+    def __init__(
+        self,
+        database: Database[_DocumentType],
+        name: str,
+        create: Optional[bool] = False,
+        codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        write_concern: Optional[WriteConcern] = None,
+        read_concern: Optional[ReadConcern] = None,
+        session: Optional[ClientSession] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Get / create a Mongo collection.
+    
+        Raises :class:`TypeError` if `name` is not an instance of
+        :class:`str`. Raises :class:`~pymongo.errors.InvalidName` if `name` is
+        not a valid collection name. Any additional keyword arguments will be used
+        as options passed to the create command. See
+        :meth:`~pymongo.database.Database.create_collection` for valid
+        options.
+    
+        If `create` is ``True``, `collation` is specified, or any additional
+        keyword arguments are present, a ``create`` command will be
+        sent, using ``session`` if specified. Otherwise, a ``create`` command
+        will not be sent and the collection will be created implicitly on first
+        use. The optional ``session`` argument is *only* used for the ``create``
+        command, it is not associated with the collection afterward.
+    
+        :Parameters:
+          - `database`: the database to get a collection from
+          - `name`: the name of the collection to get
+          - `create` (optional): if ``True``, force collection
+            creation even without options being set
+          - `codec_options` (optional): An instance of
+            :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+            default) database.codec_options is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) database.read_preference is used.
+          - `write_concern` (optional): An instance of
+            :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+            default) database.write_concern is used.
+          - `read_concern` (optional): An instance of
+            :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+            default) database.read_concern is used.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`. If a collation is provided,
+            it will be passed to the create collection command.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` that is used with
+            the create collection command
+          - `**kwargs` (optional): additional keyword arguments will
+            be passed as options for the create collection command
+    
+        .. versionchanged:: 4.2
+           Added the ``clusteredIndex`` and ``encryptedFields`` parameters.
+    
+        .. versionchanged:: 4.0
+           Removed the reindex, map_reduce, inline_map_reduce,
+           parallel_scan, initialize_unordered_bulk_op,
+           initialize_ordered_bulk_op, group, count, insert, save,
+           update, remove, find_and_modify, and ensure_index methods. See the
+           :ref:`pymongo4-migration-guide`.
+    
+        .. versionchanged:: 3.6
+           Added ``session`` parameter.
+    
+        .. versionchanged:: 3.4
+           Support the `collation` option.
+    
+        .. versionchanged:: 3.2
+           Added the read_concern option.
+    
+        .. versionchanged:: 3.0
+           Added the codec_options, read_preference, and write_concern options.
+           Removed the uuid_subtype attribute.
+           :class:`~pymongo.collection.Collection` no longer returns an
+           instance of :class:`~pymongo.collection.Collection` for attribute
+           names with leading underscores. You must use dict-style lookups
+           instead::
+    
+               collection['__my_collection__']
+    
+           Not:
+    
+               collection.__my_collection__
+    
+        .. seealso:: The MongoDB documentation on `collections <https://dochub.mongodb.org/core/collections>`_.
+        """
+        super().__init__(
+            codec_options or database.codec_options,
+            read_preference or database.read_preference,
+            write_concern or database.write_concern,
+            read_concern or database.read_concern,
+        )
+        if not isinstance(name, str):
+>           raise TypeError("name must be an instance of str")
+E           TypeError: name must be an instance of str
+
+..\..\..\miniconda3\lib\site-packages\pymongo\collection.py:226: TypeError
+=========================== short test summary info ===========================
+ERROR tests/test_ai.py::test_generate_text - TypeError: name must be an insta...
+ERROR tests/test_ai.py::test_generate_quiz - TypeError: name must be an insta...
+ERROR tests/test_ai.py::test_autocomplete - TypeError: name must be an instan...
+======================== 4 warnings, 3 errors in 9.58s ========================
+
+--------------------------------------------------------------------------------

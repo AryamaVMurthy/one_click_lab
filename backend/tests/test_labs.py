@@ -15,19 +15,57 @@ TEST_USER = {
 # Test lab data
 TEST_LAB = {
     "title": "Introduction to Python",
-    "description": "Learn the basics of Python programming language"
+    "description": "Learn the basics of Python programming language",
+    "sections": [
+        {
+            "title": "Getting Started with Python",
+            "order": 0,
+            "modules": [
+                {
+                    "type": "text",
+                    "title": "Introduction to Variables",
+                    "content": "<p>Variables are containers for storing data values.</p>",
+                    "order": 0
+                },
+                {
+                    "type": "quiz",
+                    "title": "Python Basics Quiz",
+                    "questions": [
+                        {
+                            "text": "What is Python?",
+                            "options": [
+                                {
+                                    "text": "A programming language",
+                                    "isCorrect": True
+                                },
+                                {
+                                    "text": "A snake",
+                                    "isCorrect": False
+                                }
+                            ],
+                            "explanation": "Python is a high-level programming language.",
+                            "points": 1
+                        }
+                    ],
+                    "order": 1
+                }
+            ]
+        }
+    ]
 }
 
 # Test section data
 TEST_SECTION = {
-    "title": "Getting Started with Python"
+    "title": "Getting Started with Python",
+    "order": 0
 }
 
 # Test module data
 TEST_TEXT_MODULE = {
     "type": "text",
     "title": "Introduction to Variables",
-    "content": "<p>Variables are containers for storing data values.</p>"
+    "content": "<p>Variables are containers for storing data values.</p>",
+    "order": 0
 }
 
 TEST_QUIZ_MODULE = {
@@ -48,6 +86,24 @@ TEST_QUIZ_MODULE = {
             ],
             "explanation": "Python is a high-level programming language.",
             "points": 1
+        }
+    ],
+    "order": 1
+}
+
+TEST_CONTENT_UPDATE = {
+    "sections": [
+        {
+            "title": "Updated Section",
+            "order": 0,
+            "modules": [
+                {
+                    "type": "text",
+                    "title": "Updated Module",
+                    "content": "This is updated content",
+                    "order": 0
+                }
+            ]
         }
     ]
 }
@@ -82,7 +138,14 @@ def test_create_lab(client: TestClient, auth_headers, clean_db):
     assert "id" in data["data"]
     assert "createdAt" in data["data"]
     assert "updatedAt" in data["data"]
-    assert data["data"]["creatorId"] is not None
+    assert "author" in data["data"]
+    assert "id" in data["data"]["author"]
+    assert "sections" in data["data"]
+    assert len(data["data"]["sections"]) == 1
+    assert data["data"]["sections"][0]["title"] == TEST_LAB["sections"][0]["title"]
+    assert len(data["data"]["sections"][0]["modules"]) == 2
+    assert data["data"]["sections"][0]["modules"][0]["title"] == TEST_LAB["sections"][0]["modules"][0]["title"]
+    assert data["data"]["sections"][0]["modules"][1]["title"] == TEST_LAB["sections"][0]["modules"][1]["title"]
 
 def test_get_lab_by_id(client: TestClient, auth_headers, clean_db):
     """Test getting a lab by ID."""
@@ -105,6 +168,8 @@ def test_get_lab_by_id(client: TestClient, auth_headers, clean_db):
     assert "data" in data
     assert data["data"]["id"] == lab_id
     assert data["data"]["title"] == TEST_LAB["title"]
+    assert "sections" in data["data"]
+    assert isinstance(data["data"]["sections"], list)
 
 def test_get_all_labs(client: TestClient, auth_headers, clean_db):
     """Test getting all labs."""
@@ -127,8 +192,8 @@ def test_get_all_labs(client: TestClient, auth_headers, clean_db):
     assert "data" in data
     assert "labs" in data["data"]
     assert len(data["data"]["labs"]) == 2
-    assert "totalCount" in data["data"]
-    assert data["data"]["totalCount"] == 2
+    assert "pagination" in data["data"]
+    assert data["data"]["pagination"]["total"] == 2
 
 def test_update_lab(client: TestClient, auth_headers, clean_db):
     """Test updating a lab."""
@@ -157,8 +222,8 @@ def test_update_lab(client: TestClient, auth_headers, clean_db):
     assert data["data"]["title"] == updated_data["title"]
     assert data["data"]["description"] == updated_data["description"]
 
-def test_create_section(client: TestClient, auth_headers, clean_db):
-    """Test creating a section in a lab."""
+def test_add_section(client: TestClient, auth_headers, clean_db):
+    """Test adding a section to a lab."""
     # Create a lab first
     create_response = client.post(
         "/api/v1/labs",
@@ -167,7 +232,7 @@ def test_create_section(client: TestClient, auth_headers, clean_db):
     )
     lab_id = create_response.json()["data"]["id"]
     
-    # Create a section
+    # Add a section
     response = client.post(
         f"/api/v1/labs/{lab_id}/sections",
         json=TEST_SECTION,
@@ -177,75 +242,37 @@ def test_create_section(client: TestClient, auth_headers, clean_db):
     data = response.json()
     assert data["success"] is True
     assert "data" in data
-    assert data["data"]["title"] == TEST_SECTION["title"]
-    assert "id" in data["data"]
-    assert data["data"]["labId"] == lab_id
+    assert len(data["data"]["sections"]) >= 1
+    # Check if the last section added matches our test section
+    last_section = data["data"]["sections"][-1]
+    assert last_section["title"] == TEST_SECTION["title"]
+    assert last_section["order"] == TEST_SECTION["order"]
 
-def test_create_text_module(client: TestClient, auth_headers, clean_db):
-    """Test creating a text module in a section."""
+def test_update_lab_content(client: TestClient, auth_headers, clean_db):
+    """Test updating a lab's entire content."""
     # Create a lab first
-    create_lab_response = client.post(
+    create_response = client.post(
         "/api/v1/labs",
         json=TEST_LAB,
         headers=auth_headers
     )
-    lab_id = create_lab_response.json()["data"]["id"]
+    lab_id = create_response.json()["data"]["id"]
     
-    # Create a section
-    create_section_response = client.post(
-        f"/api/v1/labs/{lab_id}/sections",
-        json=TEST_SECTION,
-        headers=auth_headers
-    )
-    section_id = create_section_response.json()["data"]["id"]
-    
-    # Create a text module
+    # Update the lab content
     response = client.post(
-        f"/api/v1/sections/{section_id}/modules",
-        json=TEST_TEXT_MODULE,
+        f"/api/v1/labs/{lab_id}/update-content",
+        json=TEST_CONTENT_UPDATE,
         headers=auth_headers
     )
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
     assert "data" in data
-    assert data["data"]["title"] == TEST_TEXT_MODULE["title"]
-    assert data["data"]["type"] == "text"
-    assert data["data"]["content"] == TEST_TEXT_MODULE["content"]
-    assert data["data"]["sectionId"] == section_id
-
-def test_create_quiz_module(client: TestClient, auth_headers, clean_db):
-    """Test creating a quiz module in a section."""
-    # Create a lab first
-    create_lab_response = client.post(
-        "/api/v1/labs",
-        json=TEST_LAB,
-        headers=auth_headers
-    )
-    lab_id = create_lab_response.json()["data"]["id"]
-    
-    # Create a section
-    create_section_response = client.post(
-        f"/api/v1/labs/{lab_id}/sections",
-        json=TEST_SECTION,
-        headers=auth_headers
-    )
-    section_id = create_section_response.json()["data"]["id"]
-    
-    # Create a quiz module
-    response = client.post(
-        f"/api/v1/sections/{section_id}/modules",
-        json=TEST_QUIZ_MODULE,
-        headers=auth_headers
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
-    assert "data" in data
-    assert data["data"]["title"] == TEST_QUIZ_MODULE["title"]
-    assert data["data"]["type"] == "quiz"
-    assert len(data["data"]["questions"]) == 1
-    assert data["data"]["sectionId"] == section_id
+    assert len(data["data"]["sections"]) == 1
+    assert data["data"]["sections"][0]["title"] == TEST_CONTENT_UPDATE["sections"][0]["title"]
+    assert len(data["data"]["sections"][0]["modules"]) == 1
+    assert data["data"]["sections"][0]["modules"][0]["title"] == TEST_CONTENT_UPDATE["sections"][0]["modules"][0]["title"]
+    assert data["data"]["sections"][0]["modules"][0]["content"] == TEST_CONTENT_UPDATE["sections"][0]["modules"][0]["content"]
 
 def test_deploy_lab(client: TestClient, auth_headers, clean_db):
     """Test deploying a lab."""
@@ -266,7 +293,7 @@ def test_deploy_lab(client: TestClient, auth_headers, clean_db):
     data = response.json()
     assert data["success"] is True
     assert "data" in data
-    assert "deploymentId" in data["data"]
+    assert "deploymentUrl" in data["data"]
     
     # Check that the lab status is now "published"
     get_response = client.get(
@@ -274,6 +301,7 @@ def test_deploy_lab(client: TestClient, auth_headers, clean_db):
         headers=auth_headers
     )
     assert get_response.json()["data"]["status"] == "published"
+    assert get_response.json()["data"]["isPublished"] is True
 
 def test_delete_lab(client: TestClient, auth_headers, clean_db):
     """Test deleting a lab."""
@@ -299,4 +327,4 @@ def test_delete_lab(client: TestClient, auth_headers, clean_db):
         f"/api/v1/labs/{lab_id}",
         headers=auth_headers
     )
-    assert get_response.status_code == 404
+    assert get_response.json()["success"] is False

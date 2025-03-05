@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { mockGetLab, mockUpdateLab, mockDeployLab } from "@/api/mockApi";
+import { getLab, updateLab, deployLab } from "@/api/apiClient";
 import { 
   Lab, 
   Module, 
@@ -15,6 +15,7 @@ import {
   QuizModule
 } from "@/types/models";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
 import DeployConfirmationModal from "@/components/DeployConfirmationModal";
 import SectionEditor from "@/components/SectionEditor";
@@ -24,6 +25,7 @@ import LabPreview from "@/components/LabPreview";
 
 export default function EditLabPage() {
   const { theme } = useTheme();
+  const { token } = useAuth();
   const params = useParams();
   const router = useRouter();
   const labId = params.id as string;
@@ -57,7 +59,15 @@ export default function EditLabPage() {
     async function fetchLab() {
       try {
         setLoading(true);
-        const response = await mockGetLab(labId);
+        
+        // Check if token exists
+        if (!token) {
+          setError("You must be logged in to edit a lab");
+          setLoading(false);
+          return;
+        }
+        
+        const response = await getLab(token, labId);
         if (response.success && response.data) {
           const labData = response.data;
           setLab(labData);
@@ -81,7 +91,7 @@ export default function EditLabPage() {
     }
 
     fetchLab();
-  }, [labId]);
+  }, [labId, token]);
 
   // Check for unsaved changes
   useEffect(() => {
@@ -165,6 +175,16 @@ export default function EditLabPage() {
   const saveLab = async () => {
     if (!lab) return;
     
+    // Check if token exists
+    if (!token) {
+      setSaveFeedback({
+        show: true,
+        message: "You must be logged in to save changes",
+        isError: true
+      });
+      return;
+    }
+    
     try {
       setIsSaving(true);
       
@@ -176,10 +196,7 @@ export default function EditLabPage() {
         updatedAt: new Date().toISOString()
       };
       
-      const response = await mockUpdateLab({
-        id: lab.id,
-        lab: updatedLab
-      });
+      const response = await updateLab(token, lab.id, updatedLab);
       
       if (response.success && response.data) {
         // Update local state with server response
@@ -217,24 +234,40 @@ export default function EditLabPage() {
   };
 
   // Deploy lab
-  const deployLab = async () => {
+  const handleDeployLab = async () => {
     if (!lab) return;
     
-    // First save any unsaved changes
+    // Check if there are unsaved changes first
     if (hasUnsavedChanges) {
       await saveLab();
+    }
+    
+    // Check if token exists
+    if (!token) {
+      setError("You must be logged in to deploy this lab");
+      return;
     }
     
     setIsDeploying(true);
     
     try {
-      const response = await mockDeployLab(lab.id);
+      const response = await deployLab(token, lab.id);
       
       if (response.success && response.data) {
         setDeploySuccess({
           url: response.data.deploymentUrl,
           version: response.data.deployedVersion
         });
+        
+        // Update lab data to reflect deployed state
+        if (lab) {
+          setLab({
+            ...lab,
+            isPublished: true,
+            publishedAt: new Date().toISOString(),
+            publishedVersion: response.data.deployedVersion
+          });
+        }
       } else {
         setError(response.error || "Failed to deploy lab");
       }
@@ -243,7 +276,6 @@ export default function EditLabPage() {
       setError("An unexpected error occurred during deployment");
     } finally {
       setIsDeploying(false);
-      setShowDeployModal(false);
     }
   };
 
@@ -405,13 +437,13 @@ export default function EditLabPage() {
                 title="Toggle between edit and preview mode"
               >
                 {showModulePreview ? (
-                  <>
+                  <React.Fragment key="edit-mode">
                     <EditIcon2 className="mr-1.5 h-4 w-4" /> Edit Mode
-                  </>
+                  </React.Fragment>
                 ) : (
-                  <>
+                  <React.Fragment key="preview-mode">
                     <EyeIcon className="mr-1.5 h-4 w-4" /> Preview Mode
-                  </>
+                  </React.Fragment>
                 )}
               </button>
             )}
@@ -462,15 +494,15 @@ export default function EditLabPage() {
               }`}
             >
               {isSaving ? (
-                <>
+                <React.Fragment key="saving">
                   <SaveIcon className="mr-2 animate-spin" />
                   Saving...
-                </>
+                </React.Fragment>
               ) : (
-                <>
+                <React.Fragment key="save">
                   <SaveIcon className="mr-2" />
                   Save
-                </>
+                </React.Fragment>
               )}
             </button>
             
@@ -606,13 +638,13 @@ export default function EditLabPage() {
                       title="Toggle between edit and preview mode"
                     >
                       {showModulePreview ? (
-                        <>
+                        <React.Fragment key="edit-mode">
                           <EditIcon2 className="mr-1.5 h-4 w-4" /> Edit Mode
-                        </>
+                        </React.Fragment>
                       ) : (
-                        <>
+                        <React.Fragment key="preview-mode">
                           <EyeIcon className="mr-1.5 h-4 w-4" /> Preview Mode
-                        </>
+                        </React.Fragment>
                       )}
                     </button>
                     
@@ -630,6 +662,7 @@ export default function EditLabPage() {
                         <div className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-card border border-border-color overflow-hidden z-10">
                           <div className="py-1">
                             <button
+                              key="delete-section"
                               onClick={() => deleteSection(activeSectionIndex)}
                               className="w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-100/30 dark:hover:bg-red-900/20 flex items-center"
                             >
@@ -804,7 +837,7 @@ export default function EditLabPage() {
       <DeployConfirmationModal
         isOpen={showDeployModal}
         onClose={() => setShowDeployModal(false)}
-        onDeploy={deployLab}
+        onDeploy={handleDeployLab}
         title="Deploy Lab"
         message={
           lab?.isPublished
@@ -862,13 +895,13 @@ function XIcon() {
 
 function ChevronLeftIcon({ className = "" }: { className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 18 9 12 15 6"/></svg>
   );
 }
 
 function ChevronRightIcon({ className = "" }: { className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 18 15 12 9 6"/></svg>
   );
 }
 
@@ -880,7 +913,7 @@ function EyeIcon({ className = "" }: { className?: string }) {
 
 function EditIcon2({ className = "" }: { className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.83 2.83 0 0 1 2.83 2.83L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
   );
 }
 
@@ -892,7 +925,7 @@ function ListIcon({ className = "" }: { className?: string }) {
 
 function XCircleIcon({ className = "" }: { className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
   );
 }
 
