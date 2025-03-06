@@ -11,6 +11,7 @@ from models.ai import (
 )
 from models.user import User
 from routes.auth import get_current_user
+from utils.auth_bypass import get_user_dependency
 from utils.mongo_utils import serialize_mongo_doc
 import logging
 
@@ -20,6 +21,9 @@ router = APIRouter(tags=["ai"])
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Get the appropriate user dependency
+current_user_dependency = get_user_dependency()
 
 # API Endpoints
 @router.post(
@@ -54,7 +58,7 @@ logger = logging.getLogger(__name__)
         }
     }
 )
-async def generate_text(request: TextGenerationRequest, current_user: User = Depends(get_current_user)):
+async def generate_text(request: TextGenerationRequest, current_user: User = Depends(current_user_dependency)):
     try:
         logger.info(f"Generating text for topic: {request.topic}")
         result = await generate_text_content(request, current_user)
@@ -65,7 +69,7 @@ async def generate_text(request: TextGenerationRequest, current_user: User = Dep
 
 async def generate_text_content(
     text_request: TextGenerationRequest,
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(current_user_dependency)]
 ):
     """Generate AI text content based on parameters"""
     # In a real implementation, this would call an AI service like OpenAI, Claude, etc.
@@ -133,7 +137,7 @@ async def generate_text_content(
         }
     }
 )
-async def generate_quiz(request: QuizGenerationRequest, current_user: User = Depends(get_current_user)):
+async def generate_quiz(request: QuizGenerationRequest, current_user: User = Depends(current_user_dependency)):
     try:
         logger.info(f"Generating quiz for topic: {request.topic}")
         result = await generate_quiz_content(request, current_user)
@@ -144,7 +148,7 @@ async def generate_quiz(request: QuizGenerationRequest, current_user: User = Dep
 
 async def generate_quiz_content(
     quiz_request: QuizGenerationRequest,
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(current_user_dependency)]
 ):
     """Generate a quiz with questions and answers"""
     # In a real implementation, this would call an AI service
@@ -211,7 +215,7 @@ async def generate_quiz_content(
         }
     }
 )
-async def autocomplete(request: AutocompleteRequest, current_user: User = Depends(get_current_user)):
+async def autocomplete(request: AutocompleteRequest, current_user: User = Depends(current_user_dependency)):
     try:
         logger.info(f"Autocompleting text for prompt: {request.prompt}")
         result = await autocomplete_content(request, current_user)
@@ -222,7 +226,7 @@ async def autocomplete(request: AutocompleteRequest, current_user: User = Depend
 
 async def autocomplete_content(
     autocomplete_request: AutocompleteRequest,
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(current_user_dependency)]
 ):
     """Autocomplete text based on a prompt"""
     # In a real implementation, this would call an AI service

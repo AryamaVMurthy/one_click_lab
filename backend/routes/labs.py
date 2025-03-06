@@ -11,6 +11,7 @@ from models.lab import (
 )
 from models.user import User
 from database import get_labs_collection, get_users_collection
+from utils.auth_bypass import get_user_dependency
 from routes.auth import get_current_user
 from utils.mongo_utils import serialize_mongo_doc
 
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 # Initialize router
 router = APIRouter(tags=["labs"])
+
+# Get the appropriate user dependency
+current_user_dependency = get_user_dependency()
 
 # Helper functions
 async def get_lab_by_id(lab_id: str) -> Optional[Lab]:
@@ -34,7 +38,7 @@ async def get_lab_by_id(lab_id: str) -> Optional[Lab]:
 # API Endpoints
 
 @router.post("/labs", response_model=LabResponse)
-async def create_lab(lab: LabCreate, current_user: User = Depends(get_current_user)):
+async def create_lab(lab: LabCreate, current_user: User = Depends(current_user_dependency)):
     """
     Create a new lab
     """
@@ -80,7 +84,7 @@ async def create_new_lab(lab_data: LabCreate, current_user: User):
     return new_lab
 
 @router.get("/labs/{lab_id}", response_model=LabResponse)
-async def get_lab(lab_id: str = Path(..., title="The ID of the lab to get"), current_user: User = Depends(get_current_user)):
+async def get_lab(lab_id: str = Path(..., title="The ID of the lab to get"), current_user: User = Depends(current_user_dependency)):
     """
     Get a lab by ID
     """
@@ -116,7 +120,7 @@ async def get_lab(lab_id: str = Path(..., title="The ID of the lab to get"), cur
         }
 
 @router.put("/labs/{lab_id}", response_model=LabResponse)
-async def update_lab(lab_id: str, lab: LabUpdate, current_user: User = Depends(get_current_user)):
+async def update_lab(lab_id: str, lab: LabUpdate, current_user: User = Depends(current_user_dependency)):
     """
     Update a lab
     """
@@ -182,7 +186,7 @@ async def update_existing_lab(lab_id: str, lab_data: LabUpdate, current_user: Us
 @router.delete("/labs/{lab_id}", response_model=Dict[str, Any])
 async def delete_lab(
     lab_id: str = Path(..., title="The ID of the lab to delete"),
-    current_user: Annotated[User, Depends(get_current_user)] = None
+    current_user: Annotated[User, Depends(current_user_dependency)] = None
 ):
     """
     Delete a lab
@@ -229,7 +233,7 @@ async def get_labs(
     limit: int = Query(10, ge=1, le=100),
     status: str = Query("all", regex="^(all|draft|published)$"),
     search: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(current_user_dependency)
 ):
     """
     Get all labs with pagination and filtering
@@ -291,7 +295,7 @@ async def get_labs(
 @router.post("/labs/{lab_id}/deploy", response_model=LabResponse)
 async def deploy_lab(
     lab_id: str = Path(..., title="The ID of the lab to deploy"),
-    current_user: Annotated[User, Depends(get_current_user)] = None
+    current_user: Annotated[User, Depends(current_user_dependency)] = None
 ):
     """
     Deploy a lab
@@ -360,7 +364,7 @@ async def deploy_lab(
 async def add_section(
     lab_id: str,
     section_data: Dict[str, Any],
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(current_user_dependency)]
 ):
     """
     Add a new section to a lab
@@ -419,7 +423,7 @@ async def add_section(
 async def update_lab_content(
     lab_id: str,
     content_data: Dict[str, Any],
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(current_user_dependency)]
 ):
     """
     Update the entire lab content (sections and modules)

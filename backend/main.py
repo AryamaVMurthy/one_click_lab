@@ -23,6 +23,11 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Check if auth bypass is enabled
+auth_bypass = os.getenv("AUTH_BYPASS", "false").lower() == "true"
+if auth_bypass:
+    logger.warning(" AUTHENTICATION BYPASS ENABLED - DO NOT USE IN PRODUCTION ")
+
 app = FastAPI(
     title="One Click Labs API",
     description="API for One Click Labs platform",
@@ -66,6 +71,16 @@ async def shutdown_db_client():
 @app.get("/")
 async def root():
     return {"message": "Welcome to One Click Labs API"}
+
+@app.get("/api/v1/status")
+async def status():
+    """Get API status and configuration information"""
+    return {
+        "status": "online",
+        "version": "1.0.0",
+        "authBypass": auth_bypass,
+        "environment": os.getenv("ENVIRONMENT", "development")
+    }
 
 if __name__ == "__main__":
     # Get port from environment variable or use default
