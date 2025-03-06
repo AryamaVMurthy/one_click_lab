@@ -70,7 +70,7 @@ export default function HomePage() {
 
 function Dashboard() {
   const { theme, toggleTheme } = useTheme();
-  const { user, isAuthenticated, token } = useAuth();
+  const { user, isAuthenticated, token, logout } = useAuth();
   const [labs, setLabs] = useState<LabListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -222,26 +222,35 @@ function Dashboard() {
           
           {/* App title/logo */}
           <div className="hidden md:block">
-            <h1 className="text-2xl font-bold text-primary">One Click Labs</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent font-serif tracking-wide">One Click Labs</h1>
           </div>
           
           {/* Navigation items */}
-          <div className="flex items-center space-x-2">
-            {/* Theme toggle button */}
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 text-secondary-foreground hover:text-foreground transition-colors"
+          <div className="flex items-center space-x-3">
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-hover-color transition-colors"
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
-              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+              {theme === 'dark' ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
             </button>
             
-            <button className="p-2 text-secondary-foreground hover:text-foreground transition-colors">
-              <BellIcon />
-            </button>
-            <button className="p-2 text-secondary-foreground hover:text-foreground transition-colors">
-              <SettingsIcon />
-            </button>
+            {/* Logout button */}
+            {isAuthenticated && (
+              <button
+                onClick={() => logout()}
+                className="flex items-center space-x-1 px-3 py-2 rounded-md bg-card border border-border-color hover:bg-hover-color text-text-color transition-colors"
+                aria-label="Logout"
+              >
+                <LogoutIcon className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -262,13 +271,6 @@ function Dashboard() {
               <PlusIcon className="mr-1 h-5 w-5" />
               Create Lab
             </Link>
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-            </button>
           </div>
         </div>
 
@@ -303,7 +305,7 @@ function Dashboard() {
           </div>
           
           <div className="flex gap-2 w-full sm:w-auto">
-            <select className="px-4 py-2 border border-border-color rounded-md bg-background text-foreground">
+            <select className="bg-background border border-border-color rounded-md px-2 py-1 text-sm">
               <option value="all">All Labs</option>
               <option value="published">Published</option>
               <option value="draft">Drafts</option>
@@ -542,4 +544,8 @@ function MoonIcon({ className = "" }: { className?: string }) {
 
 function UserIcon({ className = "" }: { className?: string }) {
   return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+}
+
+function LogoutIcon({ className = "" }: { className?: string }) {
+  return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 }

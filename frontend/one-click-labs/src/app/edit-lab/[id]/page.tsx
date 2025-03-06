@@ -437,11 +437,11 @@ export default function EditLabPage() {
                 title="Toggle between edit and preview mode"
               >
                 {showModulePreview ? (
-                  <React.Fragment key="edit-mode">
+                  <React.Fragment key="edit-mode-button">
                     <EditIcon2 className="mr-1.5 h-4 w-4" /> Edit Mode
                   </React.Fragment>
                 ) : (
-                  <React.Fragment key="preview-mode">
+                  <React.Fragment key="preview-mode-button">
                     <EyeIcon className="mr-1.5 h-4 w-4" /> Preview Mode
                   </React.Fragment>
                 )}
@@ -450,7 +450,7 @@ export default function EditLabPage() {
             
             {/* Save feedback message */}
             {saveFeedback.show && (
-              <div className={`text-sm py-1 px-3 rounded-full ${
+              <div key="save-feedback" className={`text-sm py-1 px-3 rounded-full ${
                 saveFeedback.isError 
                   ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400" 
                   : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
@@ -461,7 +461,7 @@ export default function EditLabPage() {
             
             {/* Deployment success message */}
             {deploySuccess && (
-              <div className="text-sm py-1 px-3 rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 flex gap-2 items-center">
+              <div key="deploy-success" className="text-sm py-1 px-3 rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 flex gap-2 items-center">
                 Deployed! 
                 <a 
                   href={deploySuccess.url} 
@@ -494,12 +494,12 @@ export default function EditLabPage() {
               }`}
             >
               {isSaving ? (
-                <React.Fragment key="saving">
+                <React.Fragment key="saving-button">
                   <SaveIcon className="mr-2 animate-spin" />
                   Saving...
                 </React.Fragment>
               ) : (
-                <React.Fragment key="save">
+                <React.Fragment key="save-button">
                   <SaveIcon className="mr-2" />
                   Save
                 </React.Fragment>
@@ -638,11 +638,11 @@ export default function EditLabPage() {
                       title="Toggle between edit and preview mode"
                     >
                       {showModulePreview ? (
-                        <React.Fragment key="edit-mode">
+                        <React.Fragment key="edit-mode-button-mobile">
                           <EditIcon2 className="mr-1.5 h-4 w-4" /> Edit Mode
                         </React.Fragment>
                       ) : (
-                        <React.Fragment key="preview-mode">
+                        <React.Fragment key="preview-mode-button-mobile">
                           <EyeIcon className="mr-1.5 h-4 w-4" /> Preview Mode
                         </React.Fragment>
                       )}
@@ -659,7 +659,7 @@ export default function EditLabPage() {
                       </button>
                       
                       {showSectionsList && (
-                        <div className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-card border border-border-color overflow-hidden z-10">
+                        <div key="section-options-dropdown" className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-card border border-border-color overflow-hidden z-10">
                           <div className="py-1">
                             <button
                               key="delete-section"
@@ -687,10 +687,10 @@ export default function EditLabPage() {
                           <div key={module.id} className="mb-8">
                             <h3 className="text-lg font-medium mb-2">{module.title || `Module ${idx + 1}`}</h3>
                             {isTextModule(module) && (
-                              <div dangerouslySetInnerHTML={{ __html: module.content }} className="video-responsive" />
+                              <div key={`text-${module.id}`} dangerouslySetInnerHTML={{ __html: module.content }} className="video-responsive" />
                             )}
                             {isQuizModule(module) && (
-                              <div className="border-l-4 border-primary pl-4 italic">
+                              <div key={`quiz-${module.id}`} className="border-l-4 border-primary pl-4 italic">
                                 <p>Quiz with {module.questions.length} questions</p>
                                 <p className="text-secondary-foreground text-sm">(Quiz content appears in interactive mode)</p>
                               </div>
@@ -712,7 +712,7 @@ export default function EditLabPage() {
                 </div>
 
                 {/* Section navigation */}
-                <div className="mb-6 flex items-center justify-between">
+                <div key="section-navigation" className="mb-6 flex items-center justify-between">
                   <button
                     onClick={() => navigateToSection(activeSectionIndex - 1)}
                     disabled={activeSectionIndex <= 0}
@@ -740,7 +740,7 @@ export default function EditLabPage() {
                 </div>
 
                 {/* Keyboard shortcuts reminder */}
-                <div className="text-xs text-secondary-foreground text-center mb-4 p-2 bg-secondary/30 rounded-md">
+                <div key="keyboard-shortcuts" className="text-xs text-secondary-foreground text-center mb-4 p-2 bg-secondary/30 rounded-md">
                   <p><span className="font-medium">Keyboard shortcuts:</span> Alt+← Previous section | Alt+→ Next section | Alt+S Toggle sidebar</p>
                 </div>
               </div>
@@ -779,7 +779,7 @@ export default function EditLabPage() {
       
       {/* Lab Details Modal */}
       {showLabDetailsModal && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div key="lab-details-modal" className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl bg-card rounded-lg shadow-xl border border-border-color p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-foreground">Lab Details</h2>
             
@@ -835,6 +835,7 @@ export default function EditLabPage() {
       
       {/* Deploy confirmation modal */}
       <DeployConfirmationModal
+        key="deploy-confirmation-modal"
         isOpen={showDeployModal}
         onClose={() => setShowDeployModal(false)}
         onDeploy={handleDeployLab}

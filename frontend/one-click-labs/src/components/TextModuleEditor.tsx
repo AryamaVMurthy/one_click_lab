@@ -22,6 +22,10 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
   const [htmlInput, setHtmlInput] = useState("");
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [showCodeBlockPopup, setShowCodeBlockPopup] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeLang, setCodeLang] = useState("javascript");
+  const [isExecutable, setIsExecutable] = useState(false); // Default to non-executable
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const savedSelectionRef = useRef<Range | null>(null);
@@ -140,32 +144,68 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
           'style', 'pre', 'code', 'kbd', 'samp',
           'var', 'sub', 'sup', 'small', 'strong',
           'em', 'mark', 'del', 'ins', 'abbr',
-          'dfn', 'cite', 'q', 's', 'time'
+          'dfn', 'cite', 'q', 's', 'time',
+          'button', 'textarea'
         ]),
         allowedAttributes: {
           ...sanitizeHtml.defaults.allowedAttributes,
-          '*': ['style', 'class', 'id'],
+          '*': ['style', 'class', 'id', 'data-language', 'readonly', 'onclick'],
           'img': ['src', 'alt', 'width', 'height', 'style', 'class'],
           'iframe': [
-            'src', 'width', 'height', 'frameborder', 
-            'allowfullscreen', 'allow', 'style', 'class'
+            'src', 'width', 'height', 'frameborder', 'allowfullscreen', 
+            'allow', 'style', 'class'
           ],
-          'div': ['style', 'class'],
-          'span': ['style', 'class'],
-          'script': ['type'],
-          'style': ['type'],
+          'div': ['class', 'style', 'data-language', 'id'],
+          'textarea': ['readonly', 'class', 'style', 'placeholder'],
+          'button': ['type', 'class', 'onclick']
         },
-        allowedIframeHostnames: [
-          'www.youtube.com', 'player.vimeo.com', 
-          'www.loom.com', 'cdn.jsdelivr.net'
-        ],
+        allowedScriptHostnames: ['trusted.com'],
+        allowedIframeHostnames: ['www.youtube.com', 'player.vimeo.com'],
       });
       setContent(sanitized);
       onChange({
         ...module,
-        content: sanitized,
+        title,
+        content: sanitized
       });
     }
+  };
+
+  const handleCodeBlockInsert = () => {
+    if (!editorRef.current || !codeInput) return;
+    
+    // Create a unique ID for this code block
+    const uniqueId = `code-block-${Date.now()}`;
+    
+    // Set executable to false - removing execution functionality
+    const canExecute = false;
+    const execAttr = '';
+    
+    // Create the code block with proper display - remove execution button and output div
+    const codeBlockHtml = `
+      <div class="code-block-container w-full my-4 rounded-md overflow-hidden border border-border-color" data-language="${codeLang}">
+        <div class="code-header bg-gray-800 text-white text-xs px-3 py-1 flex justify-between items-center">
+          <span class="font-medium">${codeLang.toUpperCase()}</span>
+        </div>
+        <div class="code-body bg-gray-900 p-0">
+          <textarea readonly class="w-full p-3 bg-gray-900 text-gray-100 font-mono border-none focus:outline-none" 
+            style="resize: none; min-height: 100px;" id="${uniqueId}">${sanitizeHtml(codeInput)}</textarea>
+        </div>
+      </div>
+    `;
+    
+    editorRef.current.focus();
+    if (savedSelectionRef.current) {
+      restoreSelection();
+    }
+    
+    // Insert the HTML and update content
+    document.execCommand('insertHTML', false, codeBlockHtml);
+    handleContentChange();
+    
+    // Reset form
+    setCodeInput('');
+    setShowCodeBlockPopup(false);
   };
 
   const extractYoutubeId = (url: string): string | null => {
@@ -180,6 +220,50 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
     const match = url.match(regExp);
     return match ? match[1] : null;
   };
+
+  useEffect(() => {
+    // Initialize editor with content
+    if (editorRef.current && module.content) {
+      editorRef.current.innerHTML = module.content;
+    }
+    
+    // Add CSS for code blocks
+    const style = document.createElement('style');
+    style.textContent = `
+      .code-block-container {
+        margin: 1rem 0;
+        border-radius: 0.375rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .code-header {
+        padding: 0.5rem 0.75rem;
+        font-family: monospace;
+        font-weight: 500;
+        font-size: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+      }
+      .code-body textarea {
+        width: 100%;
+        padding: 0.75rem;
+        font-family: monospace;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        white-space: pre;
+        overflow-x: auto;
+        resize: none;
+        min-height: 100px;
+        outline: none !important;
+        border: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, [module.content]);
 
   return (
     <div className="bg-card rounded-lg p-4 shadow-sm">
@@ -259,6 +343,17 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
           tooltip="Insert Custom HTML"
         >
           <span className="font-mono">{'</>'}</span>
+        </ToolbarButton>
+
+        <ToolbarButton 
+          onClick={() => { saveSelection(); setShowCodeBlockPopup(true); }}
+          tooltip="Insert Code Block"
+          className="bg-primary/10 border border-primary/30 rounded hover:bg-primary/20"
+        >
+          <div className="relative">
+            <CodeBlockIcon />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"></span>
+          </div>
         </ToolbarButton>
 
         <ToolbarButton onClick={() => formatText('removeFormat')} tooltip="Clear Formatting">
@@ -374,6 +469,82 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
           </div>
         </div>
       )}
+
+      {showCodeBlockPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg shadow-lg w-full max-w-lg">
+            <h3 className="text-lg font-medium mb-4">Insert Code Block</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Programming Language
+              </label>
+              <select
+                value={codeLang}
+                onChange={(e) => setCodeLang(e.target.value)}
+                className="w-full p-2 border border-border-color rounded-md bg-background"
+              >
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+                <option value="cpp">C++</option>
+                <option value="typescript">TypeScript</option>
+                <option value="ruby">Ruby</option>
+                <option value="php">PHP</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="bash">Bash</option>
+                <option value="sql">SQL</option>
+              </select>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Code
+              </label>
+              <textarea
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                placeholder={`Enter your code here...`}
+                className="w-full h-40 p-2 border border-border-color rounded-md bg-background font-mono"
+              />
+            </div>
+            
+            {codeLang === "javascript" && (
+              <div className="mb-4 flex items-center hidden">
+                <input 
+                  type="checkbox" 
+                  id="is-executable" 
+                  checked={isExecutable}
+                  onChange={(e) => setIsExecutable(e.target.checked)}
+                  className="mr-2 h-4 w-4" 
+                />
+                <label htmlFor="is-executable" className="text-sm">
+                  Allow code execution (JavaScript only)
+                </label>
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2">
+              <button 
+                onClick={() => setShowCodeBlockPopup(false)}
+                className="px-4 py-2 border border-border-color rounded-md hover:bg-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCodeBlockInsert}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+              >
+                Insert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -383,15 +554,16 @@ interface ToolbarButtonProps {
   onClick: () => void;
   tooltip: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-function ToolbarButton({ onClick, tooltip, children }: ToolbarButtonProps) {
+function ToolbarButton({ onClick, tooltip, children, className = "" }: ToolbarButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={tooltip}
-      className="w-8 h-8 flex items-center justify-center rounded hover:bg-secondary text-foreground"
+      className={`w-8 h-8 flex items-center justify-center rounded hover:bg-secondary text-foreground ${className}`}
     >
       {children}
     </button>
@@ -404,7 +576,7 @@ function BoldIcon() {
 }
 
 function ItalicIcon() {
-  return <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M7.991 11.674 9.53 4.455c.123-.595.246-.71 1.347-.807l.11-.52H7.211l-.11.52c1.06.096 1.128.212 1.005.807L6.57 11.674c-.123.595-.246.71-1.346.806l-.11.52h3.774l.11-.52c-1.06-.095-1.129-.211-1.006-.806z"/></svg>;
+  return <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M7.991 11.674 9.53 4.455c.123-.595.246-.71 1.347-.807l.11-.52H7.211l-.11.52c1.06.096 1.128.212 1.005.807L6.57 11.674c-.123.595-.246.71-1.346.806l-.11.52h3.774l.11-.52c-1.06-.095-1.129-.211-1.006-.807z"/></svg>;
 }
 
 function UnderlineIcon() {
@@ -441,4 +613,14 @@ function ImageIcon() {
 
 function VideoIcon() {
   return <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm4 0v6h8V1H4zm8 8H4v6h8V9zM1 1v2h2V1H1zm2 3H1v2h2V4zM1 7v2h2V7H1zm2 3H1v2h2v-2zm-2 3v2h2v-2H1zM15 1h-2v2h2V1zm-2 3v2h2V4h-2zm2 3h-2v2h2V7zm-2 3v2h2v-2h-2zm2 3h-2v2h2v-2z"/></svg>;
+}
+
+function CodeBlockIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+      <path d="M9 22L15 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 6L22 12L17 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 6L2 12L7 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
 }
