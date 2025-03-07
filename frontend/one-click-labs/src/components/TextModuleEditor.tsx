@@ -71,8 +71,11 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
           allowedIframeHostnames: ['www.youtube.com', 'player.vimeo.com'],
         });
 
+        // Only update state if content has actually changed
         if (content !== sanitized) {
           setContent(sanitized);
+          
+          // Notify parent component of changes
           onChange({
             ...module,
             title,
@@ -243,21 +246,39 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
     return match ? match[1] : null;
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (contentUpdateTimeoutRef.current) {
-        clearTimeout(contentUpdateTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Only initialize content once when first mounting
-  useEffect(() => {
-    if (editorRef.current && module.content && editorRef.current.innerHTML === '') {
-      editorRef.current.innerHTML = module.content;
+  // Update module when title changes
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    
+    // Use a timeout to avoid triggering too many updates
+    if (contentUpdateTimeoutRef.current) {
+      clearTimeout(contentUpdateTimeoutRef.current);
     }
-  }, []);
+    
+    contentUpdateTimeoutRef.current = setTimeout(() => {
+      onChange({
+        ...module,
+        title: newTitle,
+        content: content
+      });
+    }, 500);
+  };
+
+  // Update title when it changes from parent
+  useEffect(() => {
+    setTitle(module.title || "");
+  }, [module.title]);
+
+  // Only initialize content once when first mounting and when module content changes externally
+  useEffect(() => {
+    if (editorRef.current && module.content) {
+      // Only update the innerHTML if it's different to avoid cursor position reset
+      if (editorRef.current.innerHTML !== module.content) {
+        editorRef.current.innerHTML = module.content;
+      }
+    }
+  }, [module.content]);
 
   // Add CSS for code blocks (separated from content initialization)
   useEffect(() => {
@@ -294,7 +315,18 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
     document.head.appendChild(style);
     
     return () => {
-      document.head.removeChild(style);
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (contentUpdateTimeoutRef.current) {
+        clearTimeout(contentUpdateTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -308,7 +340,7 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
           id="module-title"
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={handleTitleChange}
           className="w-full px-3 py-2 border border-border-color rounded-md bg-background"
           placeholder="Enter a title for this module"
         />

@@ -222,7 +222,16 @@ function Dashboard() {
           
           {/* App title/logo */}
           <div className="hidden md:block">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent font-serif tracking-wide">One Click Labs</h1>
+            <h1 className="text-2xl md:text-3xl font-bold relative px-3 py-2 select-none group">
+              <span className="absolute inset-0 bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-300 dark:to-gray-500 opacity-10 rounded transform -skew-x-6"></span>
+              <span className="relative inline-block font-playfair italic tracking-wide hover:scale-105 transition-all duration-300 ease-in-out">
+                <span className="bg-gradient-to-r from-gray-800 via-gray-700 to-gray-600 dark:from-gray-100 dark:via-gray-200 dark:to-gray-300 bg-clip-text text-transparent text-shadow-sm">One</span>
+                <span className="text-gray-500 dark:text-gray-400 mx-2 text-shadow-sm">Click</span>
+                <span className="bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 dark:from-gray-300 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent text-shadow-sm">Labs</span>
+                <span className="absolute -bottom-1 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-400 dark:via-gray-600 to-transparent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+              </span>
+              <span className="absolute -bottom-px left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-gray-400 dark:via-gray-600 to-transparent"></span>
+            </h1>
           </div>
           
           {/* Navigation items */}

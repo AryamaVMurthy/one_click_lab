@@ -97,26 +97,28 @@ export default function EditLabPage() {
   useEffect(() => {
     if (!originalLab) return;
     
-    const currentLabState = {
-      title,
-      description,
-      sections
-    };
-    
-    const originalLabState = {
-      title: originalLab.title,
-      description: originalLab.description,
-      sections: originalLab.sections
-    };
-    
-    // Basic comparison - in a real app, you'd want a more sophisticated deep comparison
+    // Use a more reliable way to check for differences without causing infinite loops
     const hasChanges = 
       title !== originalLab.title || 
       description !== originalLab.description ||
       JSON.stringify(sections) !== JSON.stringify(originalLab.sections);
     
-    setHasUnsavedChanges(hasChanges);
-  }, [title, description, sections, originalLab]);
+    // Only update state if there's an actual change to prevent infinite loops
+    if (hasUnsavedChanges !== hasChanges) {
+      setHasUnsavedChanges(hasChanges);
+    }
+    // We use a stable stringified version of sections to prevent infinite rerenders
+  }, [title, description, originalLab, hasUnsavedChanges]);
+
+  // Use a new useEffect with fewer dependencies for section changes
+  useEffect(() => {
+    if (!originalLab) return;
+    
+    const sectionsChanged = JSON.stringify(sections) !== JSON.stringify(originalLab.sections);
+    if (sectionsChanged && !hasUnsavedChanges) {
+      setHasUnsavedChanges(true);
+    }
+  }, [sections, originalLab]);
 
   // Add a section
   const addSection = () => {
@@ -437,13 +439,15 @@ export default function EditLabPage() {
                 title="Toggle between edit and preview mode"
               >
                 {showModulePreview ? (
-                  <React.Fragment key="edit-mode-button">
-                    <EditIcon2 className="mr-1.5 h-4 w-4" /> Edit Mode
-                  </React.Fragment>
+                  <>
+                    <EditIcon2 className="mr-1.5 h-4 w-4" /> 
+                    <span>Edit Mode</span>
+                  </>
                 ) : (
-                  <React.Fragment key="preview-mode-button">
-                    <EyeIcon className="mr-1.5 h-4 w-4" /> Preview Mode
-                  </React.Fragment>
+                  <>
+                    <EyeIcon className="mr-1.5 h-4 w-4" /> 
+                    <span>Preview Mode</span>
+                  </>
                 )}
               </button>
             )}
@@ -494,15 +498,15 @@ export default function EditLabPage() {
               }`}
             >
               {isSaving ? (
-                <React.Fragment key="saving-button">
+                <>
                   <SaveIcon className="mr-2 animate-spin" />
-                  Saving...
-                </React.Fragment>
+                  <span>Saving...</span>
+                </>
               ) : (
-                <React.Fragment key="save-button">
+                <>
                   <SaveIcon className="mr-2" />
-                  Save
-                </React.Fragment>
+                  <span>Save</span>
+                </>
               )}
             </button>
             
@@ -638,13 +642,15 @@ export default function EditLabPage() {
                       title="Toggle between edit and preview mode"
                     >
                       {showModulePreview ? (
-                        <React.Fragment key="edit-mode-button-mobile">
-                          <EditIcon2 className="mr-1.5 h-4 w-4" /> Edit Mode
-                        </React.Fragment>
+                        <>
+                          <EditIcon2 className="mr-1.5 h-4 w-4" /> 
+                          <span>Edit Mode</span>
+                        </>
                       ) : (
-                        <React.Fragment key="preview-mode-button-mobile">
-                          <EyeIcon className="mr-1.5 h-4 w-4" /> Preview Mode
-                        </React.Fragment>
+                        <>
+                          <EyeIcon className="mr-1.5 h-4 w-4" /> 
+                          <span>Preview Mode</span>
+                        </>
                       )}
                     </button>
                     
@@ -659,7 +665,7 @@ export default function EditLabPage() {
                       </button>
                       
                       {showSectionsList && (
-                        <div key="section-options-dropdown" className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-card border border-border-color overflow-hidden z-10">
+                        <div className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-card border border-border-color overflow-hidden z-10">
                           <div className="py-1">
                             <button
                               key="delete-section"
@@ -687,10 +693,10 @@ export default function EditLabPage() {
                           <div key={module.id} className="mb-8">
                             <h3 className="text-lg font-medium mb-2">{module.title || `Module ${idx + 1}`}</h3>
                             {isTextModule(module) && (
-                              <div key={`text-${module.id}`} dangerouslySetInnerHTML={{ __html: module.content }} className="video-responsive" />
+                              <div dangerouslySetInnerHTML={{ __html: module.content }} className="video-responsive" />
                             )}
                             {isQuizModule(module) && (
-                              <div key={`quiz-${module.id}`} className="border-l-4 border-primary pl-4 italic">
+                              <div className="border-l-4 border-primary pl-4 italic">
                                 <p>Quiz with {module.questions.length} questions</p>
                                 <p className="text-secondary-foreground text-sm">(Quiz content appears in interactive mode)</p>
                               </div>
@@ -712,7 +718,7 @@ export default function EditLabPage() {
                 </div>
 
                 {/* Section navigation */}
-                <div key="section-navigation" className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex items-center justify-between">
                   <button
                     onClick={() => navigateToSection(activeSectionIndex - 1)}
                     disabled={activeSectionIndex <= 0}
@@ -740,7 +746,7 @@ export default function EditLabPage() {
                 </div>
 
                 {/* Keyboard shortcuts reminder */}
-                <div key="keyboard-shortcuts" className="text-xs text-secondary-foreground text-center mb-4 p-2 bg-secondary/30 rounded-md">
+                <div className="text-xs text-secondary-foreground text-center mb-4 p-2 bg-secondary/30 rounded-md">
                   <p><span className="font-medium">Keyboard shortcuts:</span> Alt+← Previous section | Alt+→ Next section | Alt+S Toggle sidebar</p>
                 </div>
               </div>
@@ -779,7 +785,7 @@ export default function EditLabPage() {
       
       {/* Lab Details Modal */}
       {showLabDetailsModal && createPortal(
-        <div key="lab-details-modal" className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl bg-card rounded-lg shadow-xl border border-border-color p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-foreground">Lab Details</h2>
             

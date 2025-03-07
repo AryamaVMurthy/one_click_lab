@@ -247,13 +247,13 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
                   >
                     {isLastModule() ? (
                       <React.Fragment key="finish-button">
-                        Finish Lab
-                        <CheckIcon className="ml-2" />
+                        <span key="finish-text">Finish Lab</span>
+                        <CheckIcon key="finish-icon" className="ml-2" />
                       </React.Fragment>
                     ) : (
                       <React.Fragment key="next-button">
-                        Next
-                        <ChevronRightIcon className="ml-2" />
+                        <span key="next-text">Next</span>
+                        <ChevronRightIcon key="next-icon" className="ml-2" />
                       </React.Fragment>
                     )}
                   </button>
