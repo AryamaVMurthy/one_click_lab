@@ -29,10 +29,69 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const savedSelectionRef = useRef<Range | null>(null);
+  const contentUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const formatText = (command: string, value: string = "") => {
     document.execCommand(command, false, value);
-    handleContentChange();
+    debouncedContentChange();
+  };
+
+  // Create a debounced version of the content change handler
+  const debouncedContentChange = () => {
+    if (contentUpdateTimeoutRef.current) {
+      clearTimeout(contentUpdateTimeoutRef.current);
+    }
+    
+    contentUpdateTimeoutRef.current = setTimeout(() => {
+      if (editorRef.current) {
+        const html = editorRef.current.innerHTML;
+        const sanitized = sanitizeHtml(html, {
+          allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+            'img', 'iframe', 'div', 'span', 'script',
+            'style', 'pre', 'code', 'kbd', 'samp',
+            'var', 'sub', 'sup', 'small', 'strong',
+            'em', 'mark', 'del', 'ins', 'abbr',
+            'dfn', 'cite', 'q', 's', 'time',
+            'button', 'textarea'
+          ]),
+          allowedAttributes: {
+            ...sanitizeHtml.defaults.allowedAttributes,
+            '*': ['style', 'class', 'id', 'data-language', 'readonly', 'onclick'],
+            'img': ['src', 'alt', 'width', 'height', 'style', 'class'],
+            'iframe': [
+              'src', 'width', 'height', 'frameborder', 'allowfullscreen', 
+              'allow', 'style', 'class'
+            ],
+            'div': ['class', 'style', 'data-language', 'id'],
+            'textarea': ['readonly', 'class', 'style', 'placeholder'],
+            'button': ['type', 'class', 'onclick']
+          },
+          allowedScriptHostnames: ['trusted.com'],
+          allowedIframeHostnames: ['www.youtube.com', 'player.vimeo.com'],
+        });
+
+        if (content !== sanitized) {
+          setContent(sanitized);
+          onChange({
+            ...module,
+            title,
+            content: sanitized
+          });
+        }
+      }
+    }, 500); // Debounce for 500ms
+  };
+
+  // Modify the handleContentChange to be less disruptive to cursor position
+  const handleContentChange = (e?: React.FormEvent) => {
+    // Stop propagation if this is an event to reduce extra handlers firing
+    if (e) {
+      e.stopPropagation();
+    }
+    
+    // Use the debounced version to avoid too many state updates
+    debouncedContentChange();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,43 +193,6 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
     }
   };
 
-  const handleContentChange = () => {
-    if (editorRef.current) {
-      const html = editorRef.current.innerHTML;
-      const sanitized = sanitizeHtml(html, {
-        allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-          'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
-          'img', 'iframe', 'div', 'span', 'script',
-          'style', 'pre', 'code', 'kbd', 'samp',
-          'var', 'sub', 'sup', 'small', 'strong',
-          'em', 'mark', 'del', 'ins', 'abbr',
-          'dfn', 'cite', 'q', 's', 'time',
-          'button', 'textarea'
-        ]),
-        allowedAttributes: {
-          ...sanitizeHtml.defaults.allowedAttributes,
-          '*': ['style', 'class', 'id', 'data-language', 'readonly', 'onclick'],
-          'img': ['src', 'alt', 'width', 'height', 'style', 'class'],
-          'iframe': [
-            'src', 'width', 'height', 'frameborder', 'allowfullscreen', 
-            'allow', 'style', 'class'
-          ],
-          'div': ['class', 'style', 'data-language', 'id'],
-          'textarea': ['readonly', 'class', 'style', 'placeholder'],
-          'button': ['type', 'class', 'onclick']
-        },
-        allowedScriptHostnames: ['trusted.com'],
-        allowedIframeHostnames: ['www.youtube.com', 'player.vimeo.com'],
-      });
-      setContent(sanitized);
-      onChange({
-        ...module,
-        title,
-        content: sanitized
-      });
-    }
-  };
-
   const handleCodeBlockInsert = () => {
     if (!editorRef.current || !codeInput) return;
     
@@ -221,13 +243,24 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
     return match ? match[1] : null;
   };
 
+  // Cleanup on unmount
   useEffect(() => {
-    // Initialize editor with content
-    if (editorRef.current && module.content) {
+    return () => {
+      if (contentUpdateTimeoutRef.current) {
+        clearTimeout(contentUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Only initialize content once when first mounting
+  useEffect(() => {
+    if (editorRef.current && module.content && editorRef.current.innerHTML === '') {
       editorRef.current.innerHTML = module.content;
     }
-    
-    // Add CSS for code blocks
+  }, []);
+
+  // Add CSS for code blocks (separated from content initialization)
+  useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
       .code-block-container {
@@ -263,7 +296,7 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
     return () => {
       document.head.removeChild(style);
     };
-  }, [module.content]);
+  }, []);
 
   return (
     <div className="bg-card rounded-lg p-4 shadow-sm">
@@ -334,26 +367,25 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
         <ToolbarButton 
           onClick={() => setShowMathPopup(true)}
           tooltip="Insert Math Equation"
+          className="px-2 min-w-[50px]"
         >
-          <span className="font-math">∑</span>
+          <span className="font-medium text-xs">Math</span>
         </ToolbarButton>
 
         <ToolbarButton 
           onClick={() => setShowHtmlPopup(true)}
           tooltip="Insert Custom HTML"
+          className="px-2 min-w-[90px]"
         >
-          <span className="font-mono">{'</>'}</span>
+          <span className="font-medium text-xs">Custom HTML</span>
         </ToolbarButton>
 
         <ToolbarButton 
           onClick={() => { saveSelection(); setShowCodeBlockPopup(true); }}
           tooltip="Insert Code Block"
-          className="bg-primary/10 border border-primary/30 rounded hover:bg-primary/20"
+          className="bg-primary/10 hover:bg-primary/20 px-2 min-w-[50px]"
         >
-          <div className="relative">
-            <CodeBlockIcon />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"></span>
-          </div>
+          <span className="font-medium text-xs">Code</span>
         </ToolbarButton>
 
         <ToolbarButton onClick={() => formatText('removeFormat')} tooltip="Clear Formatting">
@@ -374,7 +406,13 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
         contentEditable
         className="min-h-[200px] p-4 border border-border-color rounded-md bg-background overflow-auto prose prose-sm dark:prose-invert focus:outline-none focus:ring-1 focus:ring-primary"
         onInput={handleContentChange}
-        onBlur={handleContentChange}
+        onBlur={(e) => {
+          // On blur we can safely update content without affecting cursor
+          if (contentUpdateTimeoutRef.current) {
+            clearTimeout(contentUpdateTimeoutRef.current);
+          }
+          handleContentChange(e);
+        }}
         onKeyDown={(e) => {
           if (e.key !== 'Tab') {
             savedSelectionRef.current = null;
@@ -563,7 +601,7 @@ function ToolbarButton({ onClick, tooltip, children, className = "" }: ToolbarBu
       type="button"
       onClick={onClick}
       title={tooltip}
-      className={`w-8 h-8 flex items-center justify-center rounded hover:bg-secondary text-foreground ${className}`}
+      className={`h-8 flex items-center justify-center rounded hover:bg-secondary text-foreground ${className.includes('min-w') ? '' : 'w-8'} ${className}`}
     >
       {children}
     </button>
