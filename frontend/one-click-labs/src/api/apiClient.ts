@@ -16,6 +16,7 @@ import {
   UpdateLabResponse,
   DeployLabResponse,
   GetLabsResponse,
+  SimulationResponse,
 } from '../types/api';
 
 // API Base URL - can be configured based on environment
@@ -27,7 +28,6 @@ import { fetchWithAuth } from './fetchWithAuth';
 // Helper function to handle API responses
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   if (!response.ok) {
-    // Try to parse error response
     try {
       const errorData = await response.json();
       return {
@@ -42,10 +42,12 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
     }
   }
 
-  // Parse successful response
   try {
-    const data = await response.json();
-    return data;
+    const data = await response.json() as T;
+    return {
+      success: true,
+      data
+    };
   } catch (e) {
     return {
       success: false,
@@ -801,6 +803,79 @@ export const changePassword = async (token: string, data: { currentPassword: str
       success: false,
       error: 'Failed to parse change password response',
       data: undefined
+    };
+  }
+};
+
+// Simulation API
+
+export const processSimulationResponse = (response: SimulationResponse) => {
+  return {
+    json: response.json,
+    html: response.html
+  };
+};
+
+/**
+ * Generate simulation content using AI
+ */
+export const generateSimulation = async (
+  input: string,
+  agent: 'json' | 'html' | 'both',
+  jsonState?: any,
+  htmlMemory?: string,
+  chatMemory: Array<{role: string, content: string}> = []
+) => {
+  try {
+    console.log("Sending API request with:", { 
+      input, 
+      agent, 
+      jsonState: jsonState ? "Present" : "Not present",
+      htmlMemory: htmlMemory ? "Present" : "Not present"
+    });
+
+    const response = await fetch(`${API_BASE_URL}/simulation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input,
+        agent,
+        json_state: jsonState,
+        html_memory: htmlMemory,
+        chat_memory: chatMemory
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("API error:", response.status, response.statusText);
+      return {
+        success: false,
+        error: `Server error: ${response.status} ${response.statusText}`
+      };
+    }
+
+    const data = await response.json();
+    console.log("API response received:", {
+      hasJson: !!data.json,
+      hasHtml: !!data.html,
+      htmlLength: data.html ? data.html.length : 0
+    });
+
+    return {
+      success: true,
+      data: {
+        json: data.json || null,
+        html: data.html || null
+      },
+      error: undefined
+    };
+  } catch (error) {
+    console.error("Exception in API call:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
 };

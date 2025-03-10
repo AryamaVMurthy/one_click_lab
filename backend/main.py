@@ -12,6 +12,7 @@ import asyncio
 from routes.auth import router as auth_router
 from routes.labs import router as labs_router
 from routes.ai import router as ai_router
+from routes.simulation import router as simulation_router
 
 # Import database
 from database import create_indexes, create_indexes_sync
@@ -57,6 +58,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(auth_router, prefix="/api/v1", tags=["Authentication"])
 app.include_router(labs_router, prefix="/api/v1", tags=["Labs"])
 app.include_router(ai_router, prefix="/api/v1", tags=["AI"])
+app.include_router(simulation_router, prefix="/api/v1", tags=["Simulation"])
 
 @app.on_event("startup")
 async def startup_db_client():

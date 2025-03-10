@@ -33,6 +33,12 @@ export interface RefreshTokenResponse {
   error?: string;
 }
 
+// Simulation API interfaces
+export interface SimulationResponse {
+  json?: any;
+  html?: string;
+}
+
 // Lab API interfaces
 export interface GetLabResponse extends ApiResponse<Lab> {}
 
