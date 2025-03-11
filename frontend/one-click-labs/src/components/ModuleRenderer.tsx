@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Module, isTextModule, isQuizModule, isImageModule, isVideoModule, QuizQuestion } from "@/types/models";
+import { Module, isTextModule, isQuizModule, isImageModule, isVideoModule, isSimulationModule, QuizQuestion } from "@/types/models";
+import SimulationDisplay from "./simulation/SimulationDisplay";
 
 interface ModuleRendererProps {
   module: Module;
@@ -137,6 +138,26 @@ export default function ModuleRenderer({ module, onComplete }: ModuleRendererPro
           dangerouslySetInnerHTML={{ __html: module.content }} 
           className="video-responsive" // For responsive video embeds
         />
+      </div>
+    );
+  }
+
+  // Simulation module handling
+  if (isSimulationModule(module)) {
+    return (
+      <div className="simulation-module">
+        <div className="mb-4">
+          {module.description && (
+            <p className="mb-4 text-secondary-foreground">{module.description}</p>
+          )}
+        </div>
+        
+        <div 
+          className="border border-border-color rounded-lg overflow-hidden"
+          onClick={() => setHasInteracted(true)}
+        >
+          <SimulationDisplay htmlContent={module.htmlContent} />
+        </div>
       </div>
     );
   }

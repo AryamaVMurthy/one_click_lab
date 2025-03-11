@@ -72,3 +72,9 @@ The following endpoints are available:
 - `POST /api/v1/ai/generate-text` - Generate text content
 - `POST /api/v1/ai/generate-quiz` - Generate a quiz
 - `POST /api/v1/ai/autocomplete` - Autocomplete text
+
+### Simulation
+
+- `POST /api/v1/simulation` - Generate simulation content (JSON structure or HTML)
+- `POST /api/v1/simulation/save` - Save a simulation module to a lab
+- `GET /api/v1/simulation/{lab_id}/{section_id}/{module_id}` - Get a specific simulation module

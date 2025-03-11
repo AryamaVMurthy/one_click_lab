@@ -7,13 +7,17 @@ import {
   Module, 
   TextModule, 
   QuizModule, 
+  SimulationModule,
   createTextModule, 
   createQuizModule,
+  createSimulationModule,
   isTextModule,
-  isQuizModule
+  isQuizModule,
+  isSimulationModule
 } from "@/types/models";
 import TextModuleEditor from "@/components/TextModuleEditor";
 import QuizModuleEditor from "@/components/QuizModuleEditor";
+import SimulationModuleEditor from "@/components/SimulationModuleEditor";
 import ConfirmationModal from "@/components/ConfirmationModal";
 
 interface SectionEditorProps {
@@ -63,7 +67,7 @@ export default function SectionEditor({
   };
 
   // Add a new module
-  const addModule = (type: 'text' | 'quiz') => {
+  const addModule = (type: 'text' | 'quiz' | 'simulation') => {
     let newModule: Module;
     
     if (type === 'text') {
@@ -71,9 +75,14 @@ export default function SectionEditor({
         title: 'New Text Module',
         order: modules.length,
       });
-    } else {
+    } else if (type === 'quiz') {
       newModule = createQuizModule({
         title: 'New Quiz Module',
+        order: modules.length,
+      });
+    } else {
+      newModule = createSimulationModule({
+        title: 'New Simulation',
         order: modules.length,
       });
     }
@@ -187,7 +196,7 @@ export default function SectionEditor({
       {showAddModuleMenu && (
         <div className="mb-4 p-3 bg-background border border-border-color rounded-md">
           <h3 className="text-sm font-medium mb-2 text-foreground">Select Module Type:</h3>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => addModule('text')}
               className="px-3 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-md flex items-center"
@@ -201,6 +210,13 @@ export default function SectionEditor({
             >
               <QuizIcon className="mr-1" />
               Quiz Module
+            </button>
+            <button
+              onClick={() => addModule('simulation')}
+              className="px-3 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-md flex items-center"
+            >
+              <SimulationIcon className="mr-1" />
+              Simulation
             </button>
           </div>
         </div>
@@ -280,6 +296,12 @@ export default function SectionEditor({
                                 onChange={(updated) => handleModuleChange(updated as QuizModule)} 
                               />
                             )}
+                            {isSimulationModule(module) && (
+                              <SimulationModuleEditor 
+                                module={module} 
+                                onChange={(updated) => handleModuleChange(updated as SimulationModule)} 
+                              />
+                            )}
                           </div>
                         )}
                       </div>
@@ -352,5 +374,22 @@ function DocumentIcon({ className = "" }: { className?: string }) {
 function QuizIcon({ className = "" }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+  );
+}
+
+function SimulationIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M15 5v2" />
+      <path d="M9 5v2" />
+      <path d="M15 19v2" />
+      <path d="M9 19v2" />
+      <path d="M5 9h2" />
+      <path d="M5 15h2" />
+      <path d="M19 9h2" />
+      <path d="M19 15h2" />
+      <path d="M12 12v.01" />
+      <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z" />
+    </svg>
   );
 }

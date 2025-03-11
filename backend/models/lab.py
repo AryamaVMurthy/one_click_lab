@@ -42,8 +42,14 @@ class VideoModule(ModuleBase):
     provider: Optional[str] = None
     caption: Optional[str] = None
 
+class SimulationModule(ModuleBase):
+    type: str = "simulation"
+    htmlContent: str
+    description: Optional[str] = None
+    jsonStructure: Optional[Dict[str, Any]] = None
+
 # Union type for modules
-Module = Union[TextModule, QuizModule, ImageModule, VideoModule]
+Module = Union[TextModule, QuizModule, ImageModule, VideoModule, SimulationModule]
 
 # Section model
 class Section(BaseModel):

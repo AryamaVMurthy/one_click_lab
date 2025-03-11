@@ -46,7 +46,7 @@ export interface Section extends BaseEntity {
 }
 
 // Module type definitions
-export type ModuleTypeString = 'text' | 'image' | 'video' | 'quiz';
+export type ModuleTypeString = 'text' | 'image' | 'video' | 'quiz' | 'simulation';
 
 // Module type enumeration
 export enum ModuleType {
@@ -54,6 +54,7 @@ export enum ModuleType {
   IMAGE = 'image',
   VIDEO = 'video',
   QUIZ = 'quiz',
+  SIMULATION = 'simulation',
 }
 
 // Base module interface (aligned with MongoDB)
@@ -91,6 +92,14 @@ export interface VideoModule extends BaseModule {
   thumbnail?: string;
 }
 
+// Simulation Module
+export interface SimulationModule extends BaseModule {
+  type: 'simulation';
+  htmlContent: string; // Complete HTML content including CSS and JS
+  description?: string;
+  jsonStructure?: string; // Changed from object to string - JSON stored as string
+}
+
 // Quiz types
 export interface QuizQuestion {
   id: ID;
@@ -120,7 +129,7 @@ export interface QuizModule extends BaseModule {
 }
 
 // Union type for all module types
-export type Module = TextModule | ImageModule | VideoModule | QuizModule;
+export type Module = TextModule | ImageModule | VideoModule | QuizModule | SimulationModule;
 
 // Helper type guard functions
 export function isTextModule(module: Module): module is TextModule {
@@ -139,6 +148,10 @@ export function isQuizModule(module: Module): module is QuizModule {
   return module.type === ModuleType.QUIZ;
 }
 
+export function isSimulationModule(module: Module): module is SimulationModule {
+  return module.type === ModuleType.SIMULATION;
+}
+
 // Factory functions for creating new entities from MongoDB data or client-side
 export const createLab = (partialLab: Partial<Lab>): Lab => {
   return {
@@ -151,6 +164,21 @@ export const createLab = (partialLab: Partial<Lab>): Lab => {
     isPublished: partialLab.isPublished || false,
     createdAt: partialLab.createdAt || new Date().toISOString(),
     updatedAt: partialLab.updatedAt || new Date().toISOString(),
+  };
+};
+
+// Factory function for creating a simulation module
+export const createSimulationModule = (partialModule: Partial<SimulationModule> = {}): SimulationModule => {
+  return {
+    id: partialModule.id || crypto.randomUUID(),
+    type: 'simulation',
+    title: partialModule.title || 'New Simulation',
+    htmlContent: partialModule.htmlContent || '',
+    description: partialModule.description || '',
+    jsonStructure: partialModule.jsonStructure || '',  // Changed from {} to ''
+    createdAt: partialModule.createdAt || new Date().toISOString(),
+    updatedAt: partialModule.updatedAt || new Date().toISOString(),
+    order: partialModule.order !== undefined ? partialModule.order : 0,
   };
 };
 
@@ -202,6 +230,13 @@ export function mapMongoLabToLab(mongoLab: any): Lab {
               questions: module.questions,
               allowRetries: module.allowRetries,
             } as QuizModule;
+          case 'simulation':
+            return {
+              ...baseModule,
+              htmlContent: module.htmlContent,
+              description: module.description,
+              jsonStructure: module.jsonStructure,
+            } as SimulationModule;
           default:
             return baseModule as BaseModule;
         }

@@ -1,294 +1,57 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SimulationStructure from './SimulationStructure';
 import SimulationPreview from './SimulationPreview';
 import SimulationChatBot from './SimulationChatBot';
 import SimulationCodeViewer from './SimulationCodeViewer';
-import { processSimulationResponse } from '../../api/apiClient';
-import { SimulationResponse } from '../../types/api';
+import { processSimulationResponse } from '@/api/apiClient';
+import { SimulationResponse } from '@/types/api';
 
-// Update the interfaces to match the component usage
-interface SimulationStructureProps {
-  simulationData: any;
-  onStructureChange: (structure: any) => void;
+interface SimulationCreatorProps {
+  initialHtml?: string;
+  initialJson?: any;
+  onHtmlGenerated: (html: string, json?: any) => void;
+  onStructureGenerated: (structure: any) => void; 
+  onCodeGenerated: (htmlContent?: string) => void;
+  onClose?: () => void;
 }
 
-// The other interfaces remain the same
-interface SimulationCodeViewerProps {
-  jsContent: string;
-  htmlContent: string;
-  cssContent: string;
-}
-
-interface SimulationPreviewProps {
-  html: string;
-  isLoading: boolean;
-  error?: string;
-}
-
-const SimulationCreator: React.FC = () => {
+const SimulationCreator: React.FC<SimulationCreatorProps> = ({
+  initialHtml = '',
+  initialJson = null,
+  onHtmlGenerated,
+  onStructureGenerated,
+  onCodeGenerated,
+  onClose
+}) => {
   const [activeTab, setActiveTab] = useState<'structure' | 'code' | 'preview'>('structure');
-  const [structure, setStructure] = useState({
-    simulation_name: "Simple Pendulum",
-    description: "A basic pendulum simulation to demonstrate periodic motion",
+  const [structure, setStructure] = useState(initialJson || {
+    simulation_name: "New Simulation",
+    description: "Interactive simulation",
     domain: "physics",
-    system: {
-      type: "physical",
-      entities: [
-        {
-          type: "object",
-          id: "bob",
-          properties: {
-            mass: "mass",
-            radius: "radius"
-          },
-          connections: ["string"],
-          interactive_properties: {
-            draggable: true,
-            clickable: true,
-            hoverable: true
-          }
-        },
-        {
-          type: "object",
-          id: "pivot",
-          properties: {
-            fixed: true
-          }
-        }
-      ],
-      context: {
-        type: "environment",
-        properties: {
-          gravity: "gravity"
-        }
-      }
-    },
-    state: [
-      {
-        name: "mass",
-        symbol: "m",
-        type: "number",
-        unit: "kg",
-        adjustable: true,
-        range: [0.1, 5],
-        default: 1,
-        calculated: false
-      },
-      {
-        name: "length",
-        symbol: "L",
-        type: "number",
-        unit: "m",
-        adjustable: true,
-        range: [0.5, 3],
-        default: 1,
-        calculated: false
-      },
-      {
-        name: "angle",
-        symbol: "θ",
-        type: "number",
-        unit: "rad",
-        adjustable: true,
-        range: [-Math.PI/2, Math.PI/2],
-        default: 0.5,
-        calculated: false
-      },
-      {
-        name: "radius",
-        symbol: "r",
-        type: "number",
-        unit: "m",
-        adjustable: true,
-        range: [0.05, 0.3],
-        default: 0.1,
-        calculated: false
-      },
-      {
-        name: "gravity",
-        symbol: "g",
-        type: "number",
-        unit: "m/s²",
-        adjustable: true,
-        range: [1, 20],
-        default: 9.8,
-        calculated: false
-      },
-      {
-        name: "period",
-        symbol: "T",
-        type: "number",
-        unit: "s",
-        adjustable: false,
-        calculated: true,
-        formula: "2 * Math.PI * Math.sqrt(length / gravity)"
-      }
-    ],
-    constants: [
-      {
-        name: "pi",
-        symbol: "π",
-        value: 3.14159,
-        unit: ""
-      }
-    ],
-    rules: [
-      {
-        target: "angle",
-        formula: "angle0 * Math.cos(Math.sqrt(gravity / length) * time)",
-        condition: "time >= 0",
-        type: "equation"
-      }
-    ],
-    inputs: [
-      {
-        state: "angle",
-        type: "slider",
-        label: "Initial Angle",
-        properties: {
-          min: -1.57,
-          max: 1.57,
-          step: 0.01
-        }
-      },
-      {
-        state: "mass",
-        type: "slider",
-        label: "Mass",
-        properties: {
-          min: 0.1,
-          max: 5,
-          step: 0.1
-        }
-      },
-      {
-        type: "button",
-        label: "Start/Stop",
-        properties: {
-          action: "toggleSimulation"
-        }
-      }
-    ],
-    presentation: {
-      scene: {
-        type: "2d",
-        objects: [
-          {
-            type: "circle",
-            id: "bob",
-            properties: {
-              radius: 10,
-              color: "#4B5563",
-              position: "calculateBobPosition"
-            }
-          },
-          {
-            type: "line",
-            properties: {
-              strokeWidth: 2,
-              color: "#4B5563",
-              from: "pivotPosition",
-              to: "bobPosition"
-            }
-          }
-        ]
-      },
-      graphs: [
-        {
-          x_axis: "time",
-          y_axis: "angle",
-          label: "Angle vs Time",
-          style: "line",
-          properties: {
-            color: "#2563EB",
-            grid: true
-          }
-        }
-      ],
-      outputs: [
-        {
-          state: "period",
-          label: "Period",
-          format: "%.2f s"
-        }
-      ],
-      indicators: [
-        {
-          type: "gauge",
-          state: "angle",
-          properties: {
-            unit: "rad",
-            position: "top-right"
-          }
-        }
-      ]
-    },
-    constraints: [
-      {
-        expression: "mass > 0",
-        message: "Mass must be positive"
-      },
-      {
-        expression: "length > 0",
-        message: "Length must be positive"
-      }
-    ],
-    tools: [
-      {
-        type: "timer",
-        id: "simulation-timer",
-        label: "Simulation Time",
-        properties: {
-          unit: "s",
-          precision: 2
-        }
-      },
-      {
-        type: "measure",
-        id: "angle-measure",
-        label: "Angle Measurement",
-        properties: {
-          unit: "rad",
-          precision: 2
-        }
-      }
-    ],
-    interactions: [
-      {
-        entity_id: "bob",
-        event: "drag",
-        action: "updateAngle",
-        properties: {
-          constraint: "circular"
-        }
-      }
-    ],
-    assets: [
-      {
-        id: "background",
-        type: "image",
-        src: "images/grid.png",
-        properties: {
-          alt: "Background Grid"
-        }
-      }
-    ],
-    additional_points: {
-      author: "One Click Labs",
-      version: "1.0",
-      educational_level: "high-school"
-    }
+    // Default structure can be provided here or loaded from initialJson
+    // We'll use initialJson if provided, otherwise start with empty structure
   });
-
+  
   const [generatedJson, setGeneratedJson] = useState({});
-  const [generatedHtml, setGeneratedHtml] = useState("");
+  const [generatedHtml, setGeneratedHtml] = useState(initialHtml);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
+  // Update html/json when initialHtml/initialJson changes
+  useEffect(() => {
+    if (initialHtml) {
+      setGeneratedHtml(initialHtml);
+    }
+    if (initialJson) {
+      setStructure(initialJson);
+    }
+  }, [initialHtml, initialJson]);
+
   const handleStructureChange = (newStructure: any) => {
     setStructure(newStructure);
+    onStructureGenerated(newStructure);
   };
 
   const handleSimulationResponse = (response: SimulationResponse) => {
@@ -302,8 +65,8 @@ const SimulationCreator: React.FC = () => {
     // Store the complete HTML response without splitting
     if (processed.html) {
       setGeneratedHtml(processed.html);
-    } else {
-      setGeneratedHtml("");
+      // Call the callback to update parent component
+      onHtmlGenerated(processed.html, processed.json);
     }
     
     // Automatically switch to the appropriate tab
@@ -314,57 +77,42 @@ const SimulationCreator: React.FC = () => {
     }
   };
 
-  const generateSimulation = async () => {
-    setIsLoading(true);
-    setError(undefined);
-
-    try {
-      const response = await fetch('/api/simulations/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          structure: structure,
-          configuration: {}, // Assuming configuration is an empty object
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate simulation');
-      }
-
-      const data = await response.json();
-      handleSimulationResponse(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Add a new function to handle chatbot-generated code
+  // Handle chatbot-generated code
   const handleChatbotCodeGeneration = async (htmlContent: string) => {
     setGeneratedHtml(htmlContent);
     setActiveTab('preview');
     setIsLoading(false);
+    
+    // Call the callback to update parent component
+    onHtmlGenerated(htmlContent);
   };
 
-  // Update this function to accept HTML content
+  // Handle chatbot generation
   const handleChatbotGeneration = (htmlContent?: string) => {
     setIsLoading(true);
     
     // If HTML was provided, set it and switch to the preview tab
     if (htmlContent) {
-      console.log("Received HTML in parent component of length:", htmlContent.length);
       setGeneratedHtml(htmlContent);
       setActiveTab('preview');
       setIsLoading(false);
+      
+      // Call the callback to update parent component
+      onHtmlGenerated(htmlContent);
     }
+    
+    // Delegate to the provided onCodeGenerated
+    onCodeGenerated(htmlContent);
+  };
+
+  // Save changes and close the editor
+  const handleSaveChanges = () => {
+    onHtmlGenerated(generatedHtml, structure);
+    if (onClose) onClose();
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-full bg-background">
       {/* Left Panel - Tabs Navigation */}
       <div className="w-48 border-r border-border-color">
         <nav className="flex flex-col py-4 space-y-4">
@@ -390,7 +138,7 @@ const SimulationCreator: React.FC = () => {
                 d="M4 6h16M4 12h16M4 18h16"
               />
             </svg>
-            <span>View Structure</span>
+            <span>Structure</span>
           </button>
           <button
             onClick={() => setActiveTab('code')}
@@ -414,7 +162,7 @@ const SimulationCreator: React.FC = () => {
                 d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
               />
             </svg>
-            <span>View HTML Code</span>
+            <span>HTML Code</span>
           </button>
           <button
             onClick={() => setActiveTab('preview')}
@@ -446,18 +194,34 @@ const SimulationCreator: React.FC = () => {
             </svg>
             <span>Preview</span>
           </button>
+          
+          {onClose && (
+            <button
+              onClick={handleSaveChanges}
+              className="mt-auto p-2 rounded-lg flex items-center space-x-2 bg-green-600 text-white hover:bg-green-700"
+              title="Save changes"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span>Save</span>
+            </button>
+          )}
         </nav>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full">
-        {/* Header */}
-        <header className="p-4 border-b border-border-color">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 text-transparent bg-clip-text animate-gradient">
-            Simulation Creator
-          </h1>
-        </header>
-
         {/* Content Area */}
         <div className="flex-1 flex">
           {/* Main Panel */}
@@ -493,19 +257,6 @@ const SimulationCreator: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Add some global styles for the gradient animation */}
-      <style jsx global>{`
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .animate-gradient {
-          background-size: 200% auto;
-          animation: gradient 4s linear infinite;
-        }
-      `}</style>
     </div>
   );
 };

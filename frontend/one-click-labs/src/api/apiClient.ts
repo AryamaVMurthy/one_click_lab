@@ -822,7 +822,7 @@ export const processSimulationResponse = (response: SimulationResponse) => {
 export const generateSimulation = async (
   input: string,
   agent: 'json' | 'html' | 'both',
-  jsonState?: any,
+  jsonState?: string,  // Changed from any to string
   htmlMemory?: string,
   chatMemory: Array<{role: string, content: string}> = []
 ) => {
@@ -856,10 +856,24 @@ export const generateSimulation = async (
       };
     }
 
-    const data = await response.json();
+    // Added error handling for JSON parsing
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.error("Failed to parse JSON response:", parseError);
+      const text = await response.text();
+      console.error("Raw response:", text.substring(0, 500) + "...");
+      return {
+        success: false,
+        error: "Failed to parse response from server"
+      };
+    }
+    
     console.log("API response received:", {
       hasJson: !!data.json,
       hasHtml: !!data.html,
+      jsonLength: data.json ? data.json.length : 0,
       htmlLength: data.html ? data.html.length : 0
     });
 
@@ -869,6 +883,123 @@ export const generateSimulation = async (
         json: data.json || null,
         html: data.html || null
       },
+      error: undefined
+    };
+  } catch (error) {
+    console.error("Exception in API call:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+};
+
+/**
+ * Save a simulation module
+ * @param token Authentication token
+ * @param labId Lab ID
+ * @param sectionId Section ID
+ * @param title Simulation title
+ * @param htmlContent HTML content of the simulation
+ * @param description Optional description
+ * @param jsonStructure Optional JSON structure as string
+ * @param moduleId Optional module ID for updating existing simulations
+ */
+export const saveSimulation = async (
+  token: string,
+  labId: string,
+  sectionId: string,
+  title: string,
+  htmlContent: string,
+  description?: string, 
+  jsonStructure?: string,  // Changed from any to string
+  moduleId?: string
+): Promise<ApiResponse<{moduleId: string, message: string}>> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/simulation/save`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({
+        labId,
+        sectionId,
+        moduleId,
+        title,
+        htmlContent,
+        description,
+        jsonStructure
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("API error:", response.status, response.statusText);
+      return {
+        success: false,
+        error: `Server error: ${response.status} ${response.statusText}`
+      };
+    }
+
+    const data = await response.json();
+    
+    if (data.success === false) {
+      return {
+        success: false,
+        error: data.error || "Failed to save simulation"
+      };
+    }
+
+    return {
+      success: true,
+      data: data.data,
+      error: undefined
+    };
+  } catch (error) {
+    console.error("Exception in API call:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+};
+
+/**
+ * Retrieve a specific simulation module
+ * @param token Authentication token
+ * @param labId Lab ID
+ * @param sectionId Section ID
+ * @param moduleId Module ID
+ */
+export const getSimulation = async (
+  token: string,
+  labId: string,
+  sectionId: string,
+  moduleId: string
+): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/simulation/${labId}/${sectionId}/${moduleId}`, {
+      method: 'GET',
+      token
+    });
+
+    if (!response.ok) {
+      console.error("API error:", response.status, response.statusText);
+      return {
+        success: false,
+        error: `Server error: ${response.status} ${response.statusText}`
+      };
+    }
+
+    const data = await response.json();
+    
+    if (data.success === false) {
+      return {
+        success: false,
+        error: data.error || "Failed to retrieve simulation"
+      };
+    }
+
+    return {
+      success: true,
+      data: data.data,
       error: undefined
     };
   } catch (error) {

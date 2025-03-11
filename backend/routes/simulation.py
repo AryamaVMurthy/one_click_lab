@@ -1,14 +1,23 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, Any
 import os
 import json
 import logging
 import traceback
 import html
+import uuid
+import re
+from datetime import datetime
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+
+from models.user import User
+from utils.auth_bypass import get_user_dependency
+from routes.auth import get_current_user
+from database import get_labs_collection
+from utils.mongo_utils import serialize_mongo_doc
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +27,9 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Simulation"])
+
+# Get the appropriate user dependency
+current_user_dependency = get_user_dependency()
 
 class SimulationRequest(BaseModel):
     input: str
@@ -30,6 +42,21 @@ class SimulationResponse(BaseModel):
     json: Optional[dict] = None
     html: Optional[str] = None
 
+class SaveSimulationRequest(BaseModel):
+    labId: str
+    sectionId: str
+    moduleId: Optional[str] = None
+    title: str
+    htmlContent: str
+    description: Optional[str] = None
+    jsonStructure: Optional[str] = None  # Changed from Dict[str, Any] to str
+
+class SaveSimulationResponse(BaseModel):
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+# Updated JSON agent prompt
 JSON_AGENT_PROMPT = """
 You are the JSON Agent, an expert at creating detailed JSON structures for interactive simulations. Your task is to:
 1. Analyze the User's Prompt: Carefully interpret the simulation request, identifying how UI controls influence the simulation and what visuals are required also enhance stuff accordingly to ensure that the simulation is generated to make the student's learning experience better. Ensure to make it very interactive.
@@ -51,6 +78,7 @@ You are the JSON Agent, an expert at creating detailed JSON structures for inter
 5. Avoid Mistakes: Double-check that every component's interaction details are fully specified and correctly tied to the state and visuals.
 IMPORTANT : ONLY GIVE THE FINAL JSON AS THE OUTPUT"""
 
+# Updated HTML agent prompt
 HTML_AGENT_PROMPT = """You are the HTML Agent, an expert at generating functional, visually stunning web simulations from JSON. Your task is to:
 1. Interpret the JSON: Extract state variables, UI controls, visual elements, rules, and detailed interaction specifications.
 2. Generate HTML, CSS, and JavaScript:
@@ -76,134 +104,313 @@ HTML_AGENT_PROMPT = """You are the HTML Agent, an expert at generating functiona
    - Confirm all interactions (e.g., drag, click) match JSON specifications and update the simulation correctly.
 IMPORTANT : ONLY GIVE THE FINAL HTML AS THE OUTPUT"""
 
-@router.post("/simulation")
-async def handle_simulation(request: SimulationRequest):
+@router.post("/simulation", response_model=SimulationResponse)
+async def create_simulation(request: SimulationRequest):
+    """Generate simulation content using AI"""
     try:
         # Log the request
-        logger.info(f"Received simulation request: {request}")
+        logger.info(f"Simulation request: {request.agent} agent for: '{request.input[:50]}...'")
         
-        # Get API key from environment
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            logger.error("Anthropic API key not found")
-            raise HTTPException(status_code=500, detail="Anthropic API key not found")
+        # Initialize the ChatAnthropic model with updated parameters
+        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not anthropic_api_key:
+            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY environment variable not set")
         
-        logger.info(f"Using API key: {api_key[:5]}...")
-        
-        # Initialize LangChain Anthropic client with the specified parameters
-        llm = ChatAnthropic(
-            model="claude-3-7-sonnet-latest",
-            anthropic_api_key=api_key,
-            max_tokens=45000,
-            temperature=0.3,
+        # Initialize Claude model with the updated configuration
+        model = ChatAnthropic(
+            model="claude-3-7-sonnet-latest", 
+            temperature=0.3, 
+            anthropic_api_key=anthropic_api_key,
+            max_tokens=50000
         )
+
+        # Create initial message history
+        message_history = []
         
+        # Add chat memory if provided
+        if request.chat_memory:
+            message_history.extend([
+                SystemMessage(content=msg["content"]) if msg["role"] == "system" 
+                else (HumanMessage(content=msg["content"]) if msg["role"] == "user" 
+                else AIMessage(content=msg["content"]))
+                for msg in request.chat_memory
+            ])
+        
+        # Generate JSON content
         json_output = None
-        html_output = None
-        
-        # Process for JSON agent
         if request.agent in ["json", "both"]:
-            logger.info("Processing JSON agent request")
+            # Format messages for LangChain with system message first
+            json_messages = [SystemMessage(content=JSON_AGENT_PROMPT)]
             
-            # Format messages for LangChain
-            messages = [SystemMessage(content=JSON_AGENT_PROMPT)]
+            # Add any existing chat memory if not already added
+            if not request.chat_memory:
+                for msg in message_history:
+                    if not isinstance(msg, SystemMessage):
+                        json_messages.append(msg)
             
-            # Add chat memory if any
-            for msg in request.chat_memory:
-                if msg["role"] == "user":
-                    messages.append(HumanMessage(content=msg["content"]))
-                elif msg["role"] == "assistant":
-                    messages.append(AIMessage(content=msg["content"]))
+            # Prepare input message for JSON generation
+            input_message = f"Create a JSON specification for: {request.input}"
+            if request.json_state:
+                input_message += f"\n\nExisting JSON to modify:\n{json.dumps(request.json_state, indent=2)}"
+            logger.debug(f"Input for JSON agent: {input_message}")
             
-            # Add the current user input
-            messages.append(HumanMessage(content=request.input))
+            json_messages.append(HumanMessage(content=input_message))
+            json_response = await model.ainvoke(json_messages)
+            
+            # Extract and process the JSON content
+            raw_json_text = json_response.content
+            logger.debug(f"Raw JSON response: {raw_json_text[:500]}...")
             
             try:
-                # Send request to Anthropic via LangChain
-                logger.info("Sending request to Anthropic API for JSON generation")
-                response = llm.invoke(messages)
-                
-                # Extract the content text from the response
-                content_text = response.content
-                logger.info(f"Received response content: {content_text[:100]}...")
-                
-                # Parse JSON from the response text
-                try:
-                    # Try to parse as direct JSON first
-                    json_output = json.loads(content_text)
-                except json.JSONDecodeError:
-                    # If direct parsing fails, try to extract JSON from markdown code block
-                    import re
-                    json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', content_text)
-                    if json_match:
-                        try:
-                            json_output = json.loads(json_match.group(1))
-                        except json.JSONDecodeError:
-                            # If both methods fail, raise an error
-                            error_msg = "Failed to parse JSON from model response"
-                            logger.error(error_msg)
-                            raise HTTPException(status_code=500, detail=error_msg)
-                    else:
-                        error_msg = "No JSON found in model response"
-                        logger.error(error_msg)
-                        raise HTTPException(status_code=500, detail=error_msg)
-                
-                logger.info("Successfully processed JSON agent response")
-                
-            except Exception as e:
-                error_msg = f"Error with Anthropic API for JSON generation: {str(e)}"
-                logger.error(error_msg)
-                raise HTTPException(status_code=500, detail=error_msg)
-
-        # Process for HTML agent
+                # Try to parse as direct JSON first
+                json_output = json.loads(raw_json_text)
+                logger.info("Successfully parsed direct JSON content")
+            except json.JSONDecodeError:
+                # If direct parsing fails, try to extract JSON from markdown code block
+                json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', raw_json_text)
+                if json_match:
+                    try:
+                        json_output = json.loads(json_match.group(1))
+                        logger.info("Successfully parsed JSON from code block")
+                    except json.JSONDecodeError as e:
+                        # Log the error but continue with the raw text
+                        logger.warning(f"JSON validation failed: {str(e)}, returning raw text")
+                        json_output = raw_json_text
+                else:
+                    logger.warning("No JSON code block found, using raw text")
+                    json_output = raw_json_text
+        
+        # Generate HTML content
+        html_content = None
         if request.agent in ["html", "both"]:
-            logger.info("Processing HTML agent request")
+            # Create a fresh message history for HTML generation
+            html_messages = [SystemMessage(content=HTML_AGENT_PROMPT)]
             
-            # Use the same LLM instance but with a different system prompt for HTML generation
+            # Prepare JSON input for HTML generation
+            json_input = request.json_state if request.json_state else json_output
             
-            # Prepare input for HTML generation
+            # Format the input for HTML generation
             input_content = json.dumps({
-                "json": json_output or request.json_state,
+                "json": json_input,
                 "previous_html": request.html_memory
             })
             
-            # Format messages for LangChain
-            html_messages = [
-                SystemMessage(content=HTML_AGENT_PROMPT),
-                HumanMessage(content=input_content)
-            ]
+            html_messages.append(HumanMessage(content=input_content))
             
-            try:
-                # Send request to Anthropic via LangChain
-                logger.info("Sending request to Anthropic API for HTML generation")
-                response = llm.invoke(html_messages)
-                
-                # Extract the HTML content from the response
-                html_output = response.content
-                
-                # If the HTML is in a code block, extract it
-                import re
-                html_match = re.search(r'```(?:html)?\s*([\s\S]*?)\s*```', html_output)
-                if html_match:
-                    html_output = html_match.group(1)
-                
-                # Clean up HTML escape sequences
-                html_output = html_output.replace('\\n', '\n')
-                html_output = html_output.replace('\\r', '\r')
-                html_output = html_output.replace('\\t', '\t')
-                html_output = html.unescape(html_output)
-                
-                logger.info("Successfully processed HTML agent response")
-                
-            except Exception as e:
-                error_msg = f"Error with Anthropic API for HTML generation: {str(e)}"
-                logger.error(error_msg)
-                raise HTTPException(status_code=500, detail=error_msg)
-
-        logger.info("Returning simulation response")
-        return {"json": json_output, "html": html_output}
-
+            # Generate HTML content
+            html_response = await model.ainvoke(html_messages)
+            
+            # Extract the HTML content
+            html_text = html_response.content
+            logger.debug(f"Raw HTML response: {html_text[:500]}...")
+            
+            # Extract HTML from code blocks if present
+            html_match = re.search(r'```(?:html)?\s*([\s\S]*?)\s*```', html_text)
+            if html_match:
+                html_content = html_match.group(1)
+                logger.info("Extracted HTML from code block")
+            else:
+                html_content = html_text
+                logger.info("Using raw HTML content")
+            
+            # Clean up HTML escape sequences
+            html_content = html_content.replace('\\n', '\n')
+            html_content = html_content.replace('\\r', '\r')
+            html_content = html_content.replace('\\t', '\t')
+            html_content = html.unescape(html_content)
+        
+        # Return the appropriate response based on request
+        response = SimulationResponse()
+        if request.agent in ["json", "both"] and json_output:
+            response.json = json_output
+        if request.agent in ["html", "both"] and html_content:
+            response.html = html_content
+        
+        return response
     except Exception as e:
-        error_detail = str(e) + "\n" + traceback.format_exc()
-        logger.error(f"Simulation API Error: {error_detail}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error generating simulation: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Error generating simulation: {str(e)}")
+
+@router.post("/simulation/save", response_model=SaveSimulationResponse)
+async def save_simulation(
+    request: SaveSimulationRequest,
+    current_user: User = Depends(current_user_dependency)
+):
+    """Save a simulation module to a lab section"""
+    try:
+        logger.info(f"Saving simulation for lab: {request.labId}, section: {request.sectionId}")
+        
+        # Get the labs collection
+        labs_collection = get_labs_collection()
+        
+        # Find the lab
+        lab = await labs_collection.find_one({"id": request.labId})
+        if not lab:
+            return SaveSimulationResponse(
+                success=False,
+                error=f"Lab with ID {request.labId} not found"
+            )
+        
+        # Check if the user is authorized to modify this lab
+        if lab.get("author", {}).get("id") != current_user.id and current_user.role != "admin":
+            return SaveSimulationResponse(
+                success=False,
+                error="You do not have permission to modify this lab"
+            )
+        
+        # Prepare simulation module data
+        current_time = datetime.now().isoformat()
+        simulation_module = {
+            "id": request.moduleId or str(uuid.uuid4()),
+            "type": "simulation",
+            "title": request.title,
+            "htmlContent": request.htmlContent,
+            "description": request.description,
+            "jsonStructure": request.jsonStructure,  # Now storing as string
+            "order": 0,  # Default order, will be updated if necessary
+            "createdAt": current_time,
+            "updatedAt": current_time
+        }
+        
+        # Find the section and update or add the module
+        section_index = None
+        module_index = None
+        
+        for i, section in enumerate(lab.get("sections", [])):
+            if section.get("id") == request.sectionId:
+                section_index = i
+                
+                # If moduleId is provided, find and update the existing module
+                if request.moduleId:
+                    for j, module in enumerate(section.get("modules", [])):
+                        if module.get("id") == request.moduleId:
+                            module_index = j
+                            # Update the order to maintain position
+                            simulation_module["order"] = module.get("order", 0)
+                            break
+                else:
+                    # No moduleId provided, so this is a new module
+                    # Set order to the end of the modules list
+                    simulation_module["order"] = len(section.get("modules", []))
+                
+                break
+        
+        if section_index is None:
+            return SaveSimulationResponse(
+                success=False,
+                error=f"Section with ID {request.sectionId} not found in lab"
+            )
+        
+        # Update or add the module
+        update_operation = None
+        if module_index is not None:
+            # Update existing module
+            update_path = f"sections.{section_index}.modules.{module_index}"
+            update_operation = {
+                "$set": {
+                    update_path: simulation_module,
+                    "updatedAt": current_time
+                }
+            }
+        else:
+            # Add new module
+            update_path = f"sections.{section_index}.modules"
+            update_operation = {
+                "$push": {
+                    update_path: simulation_module
+                },
+                "$set": {
+                    "updatedAt": current_time
+                }
+            }
+        
+        # Update the database
+        result = await labs_collection.update_one(
+            {"id": request.labId},
+            update_operation
+        )
+        
+        if result.modified_count == 0:
+            return SaveSimulationResponse(
+                success=False,
+                error="Failed to update lab. No changes were made."
+            )
+        
+        return SaveSimulationResponse(
+            success=True,
+            data={
+                "moduleId": simulation_module["id"],
+                "message": "Simulation module saved successfully"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error saving simulation: {str(e)}")
+        logger.error(traceback.format_exc())
+        return SaveSimulationResponse(
+            success=False,
+            error=f"Error saving simulation: {str(e)}"
+        )
+
+@router.get("/simulation/{lab_id}/{section_id}/{module_id}", response_model=SaveSimulationResponse)
+async def get_simulation(
+    lab_id: str,
+    section_id: str,
+    module_id: str,
+    current_user: User = Depends(current_user_dependency)
+):
+    """Get a specific simulation module"""
+    try:
+        logger.info(f"Getting simulation for lab: {lab_id}, section: {section_id}, module: {module_id}")
+        
+        # Get the labs collection
+        labs_collection = get_labs_collection()
+        
+        # Find the lab
+        lab = await labs_collection.find_one({"id": lab_id})
+        if not lab:
+            return SaveSimulationResponse(
+                success=False,
+                error=f"Lab with ID {lab_id} not found"
+            )
+        
+        # Convert MongoDB document to Python dict
+        lab = serialize_mongo_doc(lab)
+        
+        # Check if the user is authorized to access this lab
+        if lab.get("author", {}).get("id") != current_user.id and current_user.role != "admin":
+            return SaveSimulationResponse(
+                success=False,
+                error="You do not have permission to access this lab"
+            )
+        
+        # Find the section and module
+        for section in lab.get("sections", []):
+            if section.get("id") == section_id:
+                for module in section.get("modules", []):
+                    if module.get("id") == module_id and module.get("type") == "simulation":
+                        return SaveSimulationResponse(
+                            success=True,
+                            data=module
+                        )
+                
+                # Module not found in section
+                return SaveSimulationResponse(
+                    success=False,
+                    error=f"Simulation module with ID {module_id} not found in section"
+                )
+        
+        # Section not found
+        return SaveSimulationResponse(
+            success=False,
+            error=f"Section with ID {section_id} not found in lab"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting simulation: {str(e)}")
+        logger.error(traceback.format_exc())
+        return SaveSimulationResponse(
+            success=False,
+            error=f"Error getting simulation: {str(e)}"
+        )
