@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, Fragment } from "react";
-import { Lab, Section, Module, isTextModule, isQuizModule, QuizQuestion } from "@/types/models";
+import { Lab, Section, Module, isTextModule, isQuizModule, isSimulationModule } from "@/types/models";
 import ModuleRenderer from "@/components/ModuleRenderer";
 
 interface LabPreviewProps {
@@ -17,6 +17,9 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
   // Get current section and module
   const currentSection = lab.sections[activeSectionIndex] || null;
   const currentModule = currentSection?.modules[activeModuleIndex] || null;
+  
+  // Check if current module is a simulation
+  const isSimulation = currentModule ? isSimulationModule(currentModule) : false;
 
   // Navigation functions
   const goToNextModule = () => {
@@ -165,6 +168,7 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
                       const getModuleIcon = () => {
                         if (isCompleted) return <CheckCircleIcon key="completed-icon" className="text-green-500 dark:text-green-400" />;
                         if (isQuizModule(module)) return <QuizIcon key="quiz-icon" />;
+                        if (isSimulationModule(module)) return <SimulationIcon key="simulation-icon" />;
                         return <DocumentTextIcon key="document-icon" />;
                       };
                       
@@ -199,25 +203,30 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
         
         {/* Main content area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="container mx-auto px-4 md:px-6 py-8 max-w-6xl lg:max-w-7xl">
+          <div className={`container mx-auto ${isSimulation ? 'p-0 max-w-none' : 'px-4 md:px-6 py-8 max-w-6xl lg:max-w-7xl'}`}>
             {/* Module content */}
             {currentModule ? (
-              <div className="flex flex-col">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
-                  <div>
-                    <div className="flex items-center gap-2 text-sm text-secondary-foreground mb-1">
-                      <span>Section {activeSectionIndex + 1}: {currentSection?.title}</span>
-                      <ChevronRightIcon className="h-3 w-3" />
-                      <span>Module {activeModuleIndex + 1}/{currentSection?.modules.length}</span>
+              <div className="flex flex-col h-full">
+                {!isSimulation && (
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+                    <div>
+                      <div className="flex items-center gap-2 text-sm text-secondary-foreground mb-1">
+                        <span>Section {activeSectionIndex + 1}: {currentSection?.title}</span>
+                        <ChevronRightIcon className="h-3 w-3" />
+                        <span>Module {activeModuleIndex + 1}/{currentSection?.modules.length}</span>
+                      </div>
+                      <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                        {currentModule.title || `Module ${activeModuleIndex + 1}`}
+                      </h1>
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                      {currentModule.title || `Module ${activeModuleIndex + 1}`}
-                    </h1>
                   </div>
-                </div>
+                )}
                 
                 {/* Module renderer */}
-                <div className="bg-card border border-border-color rounded-xl p-4 md:p-6 lg:p-8 shadow-sm">
+                <div className={isSimulation 
+                  ? "h-[calc(100vh-56px)]" 
+                  : "bg-card border border-border-color rounded-xl p-4 md:p-6 lg:p-8 shadow-sm"
+                }>
                   <ModuleRenderer
                     module={currentModule}
                     onComplete={() => {
@@ -227,37 +236,39 @@ export default function LabPreview({ lab, onExitPreview }: LabPreviewProps) {
                 </div>
                 
                 {/* Navigation buttons */}
-                <div className="mt-8 flex justify-between">
-                  <button
-                    onClick={goToPrevModule}
-                    disabled={activeSectionIndex === 0 && activeModuleIndex === 0}
-                    className={`px-4 py-2 rounded-md border flex items-center ${
-                      activeSectionIndex === 0 && activeModuleIndex === 0
-                        ? "border-border-color text-secondary-foreground/40 cursor-not-allowed"
-                        : "border-border-color hover:bg-secondary text-foreground"
-                    }`}
-                  >
-                    <ChevronLeftIcon className="mr-2" />
-                    Previous
-                  </button>
-                  
-                  <button
-                    onClick={goToNextModule}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center"
-                  >
-                    {isLastModule() ? (
-                      <React.Fragment key="finish-button">
-                        <span key="finish-text">Finish Lab</span>
-                        <CheckIcon key="finish-icon" className="ml-2" />
-                      </React.Fragment>
-                    ) : (
-                      <React.Fragment key="next-button">
-                        <span key="next-text">Next</span>
-                        <ChevronRightIcon key="next-icon" className="ml-2" />
-                      </React.Fragment>
-                    )}
-                  </button>
-                </div>
+                {!isSimulation && (
+                  <div className="mt-8 flex justify-between">
+                    <button
+                      onClick={goToPrevModule}
+                      disabled={activeSectionIndex === 0 && activeModuleIndex === 0}
+                      className={`px-4 py-2 rounded-md border flex items-center ${
+                        activeSectionIndex === 0 && activeModuleIndex === 0
+                          ? "border-border-color text-secondary-foreground/40 cursor-not-allowed"
+                          : "border-border-color hover:bg-secondary text-foreground"
+                      }`}
+                    >
+                      <ChevronLeftIcon className="mr-2" />
+                      Previous
+                    </button>
+                    
+                    <button
+                      onClick={goToNextModule}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center"
+                    >
+                      {isLastModule() ? (
+                        <React.Fragment key="finish-button">
+                          <span key="finish-text">Finish Lab</span>
+                          <CheckIcon key="finish-icon" className="ml-2" />
+                        </React.Fragment>
+                      ) : (
+                        <React.Fragment key="next-button">
+                          <span key="next-text">Next</span>
+                          <ChevronRightIcon key="next-icon" className="ml-2" />
+                        </React.Fragment>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-16">
@@ -308,6 +319,10 @@ function CheckCircleIcon({ className = "" }: { className?: string }) {
 
 function QuizIcon({ className = "" }: { className?: string }) {
   return <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
+}
+
+function SimulationIcon({ className = "" }: { className?: string }) {
+  return <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>;
 }
 
 function AlertIcon({ className = "" }: { className?: string }) {

@@ -145,7 +145,7 @@ export default function ModuleRenderer({ module, onComplete }: ModuleRendererPro
   // Simulation module handling
   if (isSimulationModule(module)) {
     return (
-      <div className="simulation-module">
+      <div className="simulation-module h-full">
         <div className="mb-4">
           {module.description && (
             <p className="mb-4 text-secondary-foreground">{module.description}</p>
@@ -153,10 +153,14 @@ export default function ModuleRenderer({ module, onComplete }: ModuleRendererPro
         </div>
         
         <div 
-          className="border border-border-color rounded-lg overflow-hidden"
+          className="h-[calc(100vh-200px)]"
           onClick={() => setHasInteracted(true)}
         >
-          <SimulationDisplay htmlContent={module.htmlContent} />
+          <SimulationDisplay 
+            htmlContent={module.htmlContent} 
+            fullHeight={true} 
+            className="h-full"
+          />
         </div>
       </div>
     );
