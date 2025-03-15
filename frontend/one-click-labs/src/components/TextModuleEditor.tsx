@@ -53,11 +53,13 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
             'var', 'sub', 'sup', 'small', 'strong',
             'em', 'mark', 'del', 'ins', 'abbr',
             'dfn', 'cite', 'q', 's', 'time',
-            'button', 'textarea'
+            'button', 'textarea', 'math', 'mrow', 'mi', 'mn',
+            'mo', 'mfrac', 'msup', 'msub', 'msubsup', 'annotation',
+            'semantics', 'mtext', 'mspace', 'annotation-xml'
           ]),
           allowedAttributes: {
             ...sanitizeHtml.defaults.allowedAttributes,
-            '*': ['style', 'class', 'id', 'data-language', 'readonly', 'onclick'],
+            '*': ['style', 'class', 'id', 'data-language', 'readonly', 'onclick', 'data-latex'],
             'img': ['src', 'alt', 'width', 'height', 'style', 'class'],
             'iframe': [
               'src', 'width', 'height', 'frameborder', 'allowfullscreen', 
@@ -65,7 +67,11 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
             ],
             'div': ['class', 'style', 'data-language', 'id'],
             'textarea': ['readonly', 'class', 'style', 'placeholder'],
-            'button': ['type', 'class', 'onclick']
+            'button': ['type', 'class', 'onclick'],
+            'span': ['class', 'style', 'data-latex'],
+            'math': ['xmlns', 'display'],
+            'annotation': ['encoding'],
+            'annotation-xml': ['encoding'],
           },
           allowedScriptHostnames: ['trusted.com'],
           allowedIframeHostnames: ['www.youtube.com', 'player.vimeo.com'],
@@ -123,19 +129,26 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
 
   const handleMathInsert = () => {
     try {
+      // Safely escape any backslashes in the math input
+      const safeInput = mathInput.replace(/\\/g, '\\\\');
+      
       const html = katex.renderToString(mathInput, {
         throwOnError: false,
         output: 'html',
+        displayMode: mathInput.includes('\\displaystyle'),
       });
       
       if (editorRef.current) {
         editorRef.current.focus();
-        document.execCommand('insertHTML', false, html);
+        // Wrap the KaTeX output in a span with a special class for easier identification
+        const wrappedHtml = `<span class="math-formula" data-latex="${encodeURIComponent(mathInput)}">${html}</span>`;
+        document.execCommand('insertHTML', false, wrappedHtml);
         handleContentChange();
       }
       setMathInput("");
       setShowMathPopup(false);
     } catch (error) {
+      console.error("LaTeX Error:", error);
       alert("Invalid LaTeX syntax. Please check your equation.");
     }
   };
@@ -330,6 +343,21 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
     };
   }, []);
 
+  // Add quick insert shortcut for math formulas
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt+M shortcut to open math editor
+      if (e.altKey && e.key === 'm') {
+        e.preventDefault();
+        saveSelection();
+        setShowMathPopup(true);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="bg-card rounded-lg p-4 shadow-sm">
       <div className="mb-4">
@@ -462,9 +490,41 @@ export default function TextModuleEditor({ module, onChange }: TextModuleEditorP
             <textarea
               value={mathInput}
               onChange={(e) => setMathInput(e.target.value)}
-              placeholder="Enter LaTeX equation"
-              className="w-full h-32 p-2 border border-border-color rounded-md bg-background mb-4"
+              placeholder="Enter LaTeX equation (e.g., f = \\mu N or \\frac{1}{2})"
+              className="w-full h-32 p-2 border border-border-color rounded-md bg-background mb-4 font-mono"
             />
+            
+            {mathInput && (
+              <div className="mb-4 p-3 bg-background border border-border-color rounded-md overflow-auto">
+                <p className="text-sm mb-2 font-medium">Preview:</p>
+                <div className="flex justify-center">
+                  {(() => {
+                    try {
+                      return (
+                        <div dangerouslySetInnerHTML={{
+                          __html: katex.renderToString(mathInput, {
+                            throwOnError: false,
+                            displayMode: mathInput.includes('\\displaystyle')
+                          })
+                        }} />
+                      );
+                    } catch (err) {
+                      return <span className="text-red-500">Invalid LaTeX syntax</span>;
+                    }
+                  })()}
+                </div>
+              </div>
+            )}
+            
+            <div className="text-sm text-secondary-foreground mb-4">
+              <p className="mb-1">Tips:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Use <code>\mu</code> for μ, <code>\alpha</code> for α, etc.</li>
+                <li>Use <code>\frac&#123;numerator&#125;&#123;denominator&#125;</code> for fractions</li>
+                <li>Use <code>\displaystyle</code> for display mode</li>
+              </ul>
+            </div>
+            
             <div className="flex justify-end gap-2">
               <button 
                 onClick={() => setShowMathPopup(false)}
@@ -658,7 +718,7 @@ function ListBulletIcon() {
 }
 
 function ListNumberedIcon() {
-  return <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm2-3H4v2h2V4zm8 8H4v2h10V9zM1 1v2h2V1H1zm2 3H1v2h2V4zM1 7v2h2V7H1zm2 3H1v2h2v-2zm-2 3v2h2v-2H1zM15 1h-2v2h2V1zm-2 3v2h2V4h-2zm2 3h-2v2h2V7zm-2 3v2h2v-2h-2zm2 3h-2v2h2v-2z"/></svg>;
+  return <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm2-3H4v2h2V4zm8 8H4v6h8V9zM1 1v2h2V1H1zm2 3H1v2h2V4zM1 7v2h2V7H1zm2 3H1v2h2v-2zm-2 3v2h2v-2H1zM15 1h-2v2h2V1zm-2 3v2h2V4h-2zm2 3h-2v2h2V7zm-2 3v2h2v-2h-2zm2 3h-2v2h2v-2z"/></svg>;
 }
 
 function AlignLeftIcon() {

@@ -116,12 +116,12 @@ async def create_simulation(request: SimulationRequest):
         if not anthropic_api_key:
             raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY environment variable not set")
         
-        # Initialize Claude model with the updated configuration
+        # Initialize Claude model with simplified configuration
         model = ChatAnthropic(
-            model="claude-3-7-sonnet-latest", 
-            temperature=0.3, 
+            model_name="claude-3-7-sonnet-latest", 
             anthropic_api_key=anthropic_api_key,
-            max_tokens=50000
+            temperature=0.3,
+            max_tokens_to_sample=50000  # Using max_tokens_to_sample instead of max_tokens
         )
 
         # Create initial message history

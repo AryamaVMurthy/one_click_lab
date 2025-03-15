@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Module, isTextModule, isQuizModule, isImageModule, isVideoModule, isSimulationModule, QuizQuestion } from "@/types/models";
 import SimulationDisplay from "./simulation/SimulationDisplay";
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 interface ModuleRendererProps {
   module: Module;
@@ -45,6 +47,59 @@ export default function ModuleRenderer({ module, onComplete }: ModuleRendererPro
       clearTimeout(timer);
     };
   }, [hasInteracted, module]);
+
+  // Process content to handle math expressions that aren't already rendered
+  useEffect(() => {
+    if (isTextModule(module)) {
+      // Find any unprocessed LaTeX patterns like $...$ or $$...$$
+      const processInlineMath = () => {
+        const contentDivs = document.querySelectorAll('.math-content');
+        
+        contentDivs.forEach(div => {
+          if (!div.getAttribute('data-math-processed')) {
+            try {
+              // Process inline math $...$
+              let html = div.innerHTML;
+              let inlineRegex = /\$([^\$]+)\$/g;
+              html = html.replace(inlineRegex, (match, formula) => {
+                try {
+                  return katex.renderToString(formula, {
+                    throwOnError: false,
+                    displayMode: false
+                  });
+                } catch (err) {
+                  console.error('KaTeX error:', err);
+                  return match; // Return original on error
+                }
+              });
+              
+              // Process display math $$...$$
+              let displayRegex = /\$\$([^\$]+)\$\$/g;
+              html = html.replace(displayRegex, (match, formula) => {
+                try {
+                  return katex.renderToString(formula, {
+                    throwOnError: false,
+                    displayMode: true
+                  });
+                } catch (err) {
+                  console.error('KaTeX error:', err);
+                  return match; // Return original on error
+                }
+              });
+              
+              div.innerHTML = html;
+              div.setAttribute('data-math-processed', 'true');
+            } catch (err) {
+              console.error('Error processing math:', err);
+            }
+          }
+        });
+      };
+      
+      // Process math after the component has mounted
+      setTimeout(processInlineMath, 100);
+    }
+  }, [module]);
 
   // Handle quiz submission
   const handleQuizSubmit = () => {
@@ -136,7 +191,7 @@ export default function ModuleRenderer({ module, onComplete }: ModuleRendererPro
       >
         <div 
           dangerouslySetInnerHTML={{ __html: module.content }} 
-          className="video-responsive" // For responsive video embeds
+          className="video-responsive math-content" // Added math-content class for processing
         />
       </div>
     );

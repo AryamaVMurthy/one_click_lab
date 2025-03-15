@@ -22,6 +22,7 @@ import SectionEditor from "@/components/SectionEditor";
 import { createPortal } from "react-dom";
 import ExportLabButton from "@/components/ExportLabButton";
 import LabPreview from "@/components/LabPreview";
+import ChatbotComponent from "@/components/ChatbotComponent";
 
 export default function EditLabPage() {
   const { theme } = useTheme();
@@ -138,9 +139,21 @@ export default function EditLabPage() {
 
   // Update a section
   const updateSection = (updatedSection: Section, index: number) => {
-    const newSections = [...sections];
-    newSections[index] = updatedSection;
-    setSections(newSections);
+    setSections(prevSections => {
+      const newSections = [...prevSections];
+      newSections[index] = {
+        ...updatedSection,
+        modules: updatedSection.modules.map(module => {
+          if (isTextModule(module)) {
+            return { ...module, type: 'text' } as TextModule;
+          } else if (isQuizModule(module)) {
+            return { ...module, type: 'quiz' } as QuizModule;
+          }
+          return module;
+        })
+      };
+      return newSections;
+    });
   };
 
   // Delete a section
@@ -317,6 +330,60 @@ export default function EditLabPage() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  // Handle lab update from AI chatbot
+  const handleLabUpdate = async (updatedLab: Lab) => {
+    if (!updatedLab) return;
+    
+    try {
+      setLoading(true);
+      
+      // Reload the lab from MongoDB to ensure consistent state
+      const response = await getLab(token!, labId);
+      if (response.success && response.data) {
+        const labData = response.data;
+        
+        // Update states in the same sequence as initial load
+        setLab(labData);
+        setOriginalLab(JSON.parse(JSON.stringify(labData))); // Deep copy
+        setTitle(labData.title);
+        setDescription(labData.description);
+        setSections(labData.sections || []);
+        
+        // Maintain active section state
+        if (labData.sections && labData.sections.length > 0) {
+          setActiveSectionIndex(prevIndex => 
+            prevIndex !== null && prevIndex < labData.sections.length 
+              ? prevIndex 
+              : 0
+          );
+        }
+
+        // Show success feedback
+        setSaveFeedback({
+          show: true,
+          message: "Lab updated successfully by AI Assistant",
+          isError: false
+        });
+      } else {
+        throw new Error(response.error || "Failed to reload lab");
+      }
+    } catch (error) {
+      console.error("Error processing lab update:", error);
+      setSaveFeedback({
+        show: true,
+        message: "Error updating lab content",
+        isError: true
+      });
+    } finally {
+      setLoading(false);
+      
+      // Auto-hide feedback after 3 seconds
+      setTimeout(() => {
+        setSaveFeedback({ show: false, message: "", isError: false });
+      }, 3000);
+    }
+  };
 
   // If in full preview mode, render the LabPreview component
   if (showFullLabPreview && lab) {
@@ -853,6 +920,9 @@ export default function EditLabPage() {
         }
         isDeploying={isDeploying}
       />
+
+      {/* Add Chatbot Component */}
+      {lab && <ChatbotComponent lab={lab} onLabUpdate={handleLabUpdate} />}
     </div>
   );
 }
@@ -926,7 +996,7 @@ function EditIcon2({ className = "" }: { className?: string }) {
 
 function ListIcon({ className = "" }: { className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
   );
 }
 
