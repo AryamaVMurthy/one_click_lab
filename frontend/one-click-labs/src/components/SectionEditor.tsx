@@ -66,25 +66,36 @@ export default function SectionEditor({
     });
   };
 
+  // Ensure module IDs are strings
+  const ensureModuleId = (module: Module): Module => {
+    if (!module.id) {
+      return {
+        ...module,
+        id: `module-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+    }
+    return module;
+  };
+
   // Add a new module
   const addModule = (type: 'text' | 'quiz' | 'simulation') => {
     let newModule: Module;
     
     if (type === 'text') {
-      newModule = createTextModule({
+      newModule = ensureModuleId(createTextModule({
         title: 'New Text Module',
         order: modules.length,
-      });
+      }));
     } else if (type === 'quiz') {
-      newModule = createQuizModule({
+      newModule = ensureModuleId(createQuizModule({
         title: 'New Quiz Module',
         order: modules.length,
-      });
+      }));
     } else {
-      newModule = createSimulationModule({
+      newModule = ensureModuleId(createSimulationModule({
         title: 'New Simulation',
         order: modules.length,
-      });
+      }));
     }
     
     const updatedModules = [...modules, newModule];
@@ -232,82 +243,90 @@ export default function SectionEditor({
                 ref={provided.innerRef}
                 className="space-y-4"
               >
-                {modules.map((module, index) => (
-                  <Draggable key={module.id} draggableId={module.id} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className={`bg-background border border-border-color rounded-md overflow-hidden ${snapshot.isDragging ? 'shadow-lg' : ''}`}
-                      >
-                        {/* Module Header - Draggable Handle */}
+                {modules.map((module, index) => {
+                  // Ensure each module has a valid ID
+                  const moduleWithId = ensureModuleId(module);
+                  return (
+                    <Draggable 
+                      key={moduleWithId.id} 
+                      draggableId={moduleWithId.id} 
+                      index={index}
+                    >
+                      {(provided, snapshot) => (
                         <div
-                          {...provided.dragHandleProps}
-                          className="bg-secondary p-3 flex justify-between items-center cursor-grab"
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`bg-background border border-border-color rounded-md overflow-hidden ${snapshot.isDragging ? 'shadow-lg' : ''}`}
                         >
-                          <div className="flex items-center">
-                            <span className="text-gray-400 mr-2 flex-shrink-0">
-                              <DragHandleIcon />
-                            </span>
-                            <div>
-                              <span className="font-medium text-foreground">{module.title || 'Untitled Module'}</span>
-                              <span className="ml-2 text-xs text-secondary-foreground/70 bg-background/50 px-2 py-0.5 rounded">
-                                {module.type.charAt(0).toUpperCase() + module.type.slice(1)}
+                          {/* Module Header - Draggable Handle */}
+                          <div
+                            {...provided.dragHandleProps}
+                            className="bg-secondary p-3 flex justify-between items-center cursor-grab"
+                          >
+                            <div className="flex items-center">
+                              <span className="text-gray-400 mr-2 flex-shrink-0">
+                                <DragHandleIcon />
                               </span>
+                              <div>
+                                <span className="font-medium text-foreground">{moduleWithId.title || 'Untitled Module'}</span>
+                                <span className="ml-2 text-xs text-secondary-foreground/70 bg-background/50 px-2 py-0.5 rounded">
+                                  {moduleWithId.type.charAt(0).toUpperCase() + moduleWithId.type.slice(1)}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => toggleModuleExpansion(moduleWithId.id, e)}
+                                className="text-secondary-foreground hover:text-foreground transition-colors"
+                                aria-label={expandedModuleId === moduleWithId.id ? "Collapse module" : "Expand module"}
+                              >
+                                {expandedModuleId === moduleWithId.id ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeModule(moduleWithId.id);
+                                }}
+                                className="text-red-500 hover:text-red-600 transition-colors"
+                                aria-label="Remove module"
+                              >
+                                <TrashIcon />
+                              </button>
                             </div>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => toggleModuleExpansion(module.id, e)}
-                              className="text-secondary-foreground hover:text-foreground transition-colors"
-                              aria-label={expandedModuleId === module.id ? "Collapse module" : "Expand module"}
-                            >
-                              {expandedModuleId === module.id ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeModule(module.id);
-                              }}
-                              className="text-red-500 hover:text-red-600 transition-colors"
-                              aria-label="Remove module"
-                            >
-                              <TrashIcon />
-                            </button>
-                          </div>
-                        </div>
 
-                        {/* Module Content (conditionally shown) */}
-                        {expandedModuleId === module.id && (
-                          <div 
-                            className="p-3" 
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {isTextModule(module) && (
-                              <TextModuleEditor 
-                                module={module} 
-                                onChange={(updated) => handleModuleChange(updated as TextModule)} 
-                              />
-                            )}
-                            {isQuizModule(module) && (
-                              <QuizModuleEditor 
-                                module={module} 
-                                onChange={(updated) => handleModuleChange(updated as QuizModule)} 
-                              />
-                            )}
-                            {isSimulationModule(module) && (
-                              <SimulationModuleEditor 
-                                module={module} 
-                                onChange={(updated) => handleModuleChange(updated as SimulationModule)} 
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
+                          {/* Module Content (conditionally shown) */}
+                          {expandedModuleId === moduleWithId.id && (
+                            <div 
+                              className="p-3" 
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {isTextModule(moduleWithId) && (
+                                <TextModuleEditor 
+                                  module={moduleWithId} 
+                                  onChange={(updated) => handleModuleChange(updated as TextModule)} 
+                                />
+                              )}
+                              {isQuizModule(moduleWithId) && (
+                                <QuizModuleEditor 
+                                  module={moduleWithId} 
+                                  onChange={(updated) => handleModuleChange(updated as QuizModule)} 
+                                />
+                              )}
+                              {isSimulationModule(moduleWithId) && (
+                                <SimulationModuleEditor 
+                                  module={moduleWithId} 
+                                  onChange={(updated) => handleModuleChange(updated as SimulationModule)} 
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })}
                 {provided.placeholder}
               </div>
             )}
