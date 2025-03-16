@@ -14,6 +14,12 @@ from database import get_labs_collection, get_users_collection
 from utils.auth_bypass import get_user_dependency
 from routes.auth import get_current_user
 from utils.mongo_utils import serialize_mongo_doc
+from fastapi.responses import FileResponse
+import zipfile
+import io
+import os
+from pathlib import Path
+import shutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -475,3 +481,95 @@ async def update_lab_content(
             "data": None,
             "error": str(e)
         }
+
+async def generate_static_site(lab: Lab) -> str:
+    """
+    Generate a static site from lab content
+    """
+    # Create temp directory
+    temp_dir = Path(f'/tmp/lab_export_{lab.id}')
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate HTML content
+    html_content = f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>{lab.title}</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; }}
+        </style>
+    </head>
+    <body>
+        <h1>{lab.title}</h1>
+        <p>{lab.description}</p>
+        {{% for section in lab.sections %}}
+            <div class="section">
+                <h2>{section.title}</h2>
+                {{% for module in section.modules %}}
+                    {{% if module.type == 'text' %}}
+                        <div class="text-module">
+                            {module.content}
+                        </div>
+                    {{% elif module.type == 'quiz' %}}
+                        <div class="quiz-module">
+                            <h3>Quiz</h3>
+                            {module.questions}
+                        </div>
+                    {{% endif %}}
+                {{% endfor %}}
+            </div>
+        {{% endfor %}}
+    </body>
+    </html>
+    '''
+
+    # Write HTML file
+    with open(temp_dir / 'index.html', 'w') as f:
+        f.write(html_content)
+
+    return str(temp_dir)
+
+@router.get("/labs/{lab_id}/export")
+async def export_lab(
+    lab_id: str = Path(..., title="The ID of the lab to export"),
+    current_user: User = Depends(current_user_dependency)
+):
+    """
+    Export a lab as a static site
+    """
+    try:
+        # Get the lab
+        lab = await get_lab_by_id(lab_id)
+        if not lab:
+            raise HTTPException(status_code=404, detail="Lab not found")
+
+        # Check permissions
+        if lab.author.id != current_user.id and current_user.role != "admin":
+            raise HTTPException(status_code=403, detail="Not authorized to export this lab")
+
+        # Generate static site
+        export_dir = await generate_static_site(lab)
+
+        # Create zip file
+        memory_file = io.BytesIO()
+        with zipfile.ZipFile(memory_file, 'w') as zf:
+            for root, dirs, files in os.walk(export_dir):
+                for file in files:
+                    zf.write(
+                        os.path.join(root, file),
+                        os.path.relpath(os.path.join(root, file), export_dir)
+                    )
+        memory_file.seek(0)
+
+        # Clean up
+        shutil.rmtree(export_dir)
+
+        return FileResponse(
+            memory_file,
+            media_type='application/zip',
+            filename=f'{lab.title.replace(" ", "_")}_export.zip'
+        )
+    except Exception as e:
+        logger.error(f"Error exporting lab: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
